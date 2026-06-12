@@ -1,0 +1,34 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 26,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "build",
+            "generator": "Ninja"
+        },
+        {
+            "name": "native",
+            "inherits": "build",
+            "binaryDir": "${sourceDir}/build/native",
+            "cacheVariables": {
+                "TARGET_DEVICE": "NATIVE"
+            }
+        },
+        {
+            "name": "stm32h723",
+            "inherits": "build",
+            "binaryDir": "${sourceDir}/build/stm32h723",
+            "toolchainFile": "cmake/gcc-m7f.cmake",
+            "cacheVariables": {
+                "LINKER_SCRIPT": "${sourceDir}/mcu_support/stm32/h7xx/h723/STM32H723VGTX_FLASH.ld",
+                "STARTUP_FILE": "${sourceDir}/mcu_support/stm32/h7xx/h723/startup_stm32h723xx.s",
+                "TARGET_DEVICE": "STM32H723",
+                "MCU_NAME": "STM32H723xx"
+            }
+        }
+    ]
+}
