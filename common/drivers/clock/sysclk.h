@@ -11,6 +11,14 @@
 namespace EoT
 {
 
+/**
+* @brief Concept for system clock requirements
+* This concept requires that the type T has the following member functions:
+* - `uint32_t get_freq() const`: A function that returns the current frequency of
+*   the system clock in Hz.
+* - `void set_freq(uint32_t freq)`: A function that sets the frequency of
+*   the system clock to the specified value in Hz.
+*/
 template <typename T>
 concept SysclkReq = requires(const T& t) {
     { t.get_freq() } -> std::same_as<uint32_t>;
@@ -19,8 +27,15 @@ concept SysclkReq = requires(const T& t) {
 
 class Sysclk
 {
-    explicit Sysclk(T clock) : clock(clock)
+    /**
+     * @brief Constructor for Sysclk
+     * This constructor is protected to prevent direct instantiation of the Sysclk
+     * class. It also uses a static assertion to ensure that the derived class
+     * meets the requirements of the SysclkReq concept.
+     */
+    Sysclk()
     {
+        static_assert(SysclkReq<T> && std::derived_from<T, Sysclk>);
     }
 
     /**
