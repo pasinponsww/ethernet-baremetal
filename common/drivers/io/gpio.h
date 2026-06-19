@@ -30,7 +30,6 @@ class Gpio
 {
 
 public:
-
     /**
      * @brief constructor which uses a static_assert if normal concept syntax doesn't work
      */
