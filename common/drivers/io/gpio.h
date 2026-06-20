@@ -11,6 +11,10 @@
 namespace EoT
 {
 
+/**
+     * Concept which forces derived class to have set, get, 
+     * and toggle methods.
+     */
 template <typename T>
 concept GpioReq = requires(T t, uint8_t value) {
     {
