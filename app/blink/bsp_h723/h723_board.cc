@@ -1,5 +1,6 @@
 #include "board.h"
 #include "st_gpio.h"
+#include "stm32h7xx_hal.h"
 
 namespace EoT::StmH7
 {
@@ -26,6 +27,8 @@ bool board_init()
     bool result = false;
 
     // Enable clock
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOE_CLK_ENABLE();
 
     result = StmH7::led1.init();
     result = StmH7::led2.init();

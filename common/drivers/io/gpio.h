@@ -15,12 +15,15 @@ namespace EoT
      * Concept which forces derived class to have set, get, 
      * and toggle methods.
      */
+
+// clang-format off
 template <typename T>
 concept GpioReq = requires(T t, uint8_t value) {
     { t.set(value) } -> std::same_as<void>;
     { t.get() } -> std::same_as<uint8_t>;
     { t.toggle() } -> std::same_as<void>;
 };
+// clang-format on
 
 template <typename T>
 class Gpio
