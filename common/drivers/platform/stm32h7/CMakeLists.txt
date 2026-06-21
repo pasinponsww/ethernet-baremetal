@@ -1,15 +1,17 @@
-# Uncomment this when you adding the st_gpio.cc/.h
-# add_library(hal STATIC
-#     #st_gpio.cc
-# )
 
-# target_include_directories(hal PUBLIC
-#     .
-#     ${CMAKE_SOURCE_DIR}/common/core/utils
-# )
+add_library(hal STATIC
+    st_gpio.cc
+)
 
-# Uncomment this when you adding the st_gpio.cc/.h
-# target_link_libraries(hal PUBLIC
-#     st_h7_support
-#     core 
-# )
+target_include_directories(hal PUBLIC
+    .
+    ${CMAKE_SOURCE_DIR}/mcu_support/stm32/h7xx/
+    ${CMAKE_SOURCE_DIR}/common/drivers/io
+    ${CMAKE_SOURCE_DIR}/common/core/utils
+)
+
+#Uncomment this when you adding the st_gpio.cc/.h
+target_link_libraries(hal PUBLIC
+    st_h7_support
+    core 
+)
