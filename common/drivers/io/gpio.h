@@ -17,15 +17,9 @@ namespace EoT
      */
 template <typename T>
 concept GpioReq = requires(T t, uint8_t value) {
-    {
-        t.set(value)
-    } -> std::same_as<void>;
-    {
-        t.get()
-    } -> std::same_as<uint8_t>;
-    {
-        t.toggle()
-    } -> std::same_as<void>;
+    { t.set(value) } -> std::same_as<void>;
+    { t.get() } -> std::same_as<uint8_t>;
+    { t.toggle() } -> std::same_as<void>;
 };
 
 template <typename T>
