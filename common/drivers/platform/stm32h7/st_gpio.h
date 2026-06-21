@@ -62,7 +62,7 @@ enum class AF : uint8_t
     AF15 = 15
 };
 
-struct StGpioParams
+struct StGpioSettings
 {
     MODER mode;
     OTYPE otype;
@@ -81,7 +81,7 @@ public:
      * @param config ptr to gpio config struct
      */
     StGpio(GPIO_TypeDef* const port, uint8_t pin_num,
-           StGpioParams* const config);
+           StGpioSettings* const config);
 
     /**
      * @brief configures gpio pin
@@ -92,25 +92,25 @@ public:
      * @brief sets a gpio pin to 1 or 0
      * @param value 1 or 0
      */
-    void set(uint8_t value);
+    bool set(uint8_t value);
 
     /**
      * @brief returns value of gpio pin
      */
-    uint8_t get();
+    bool get() const;
 
     /**
      * @brief toggles pin
      */
-    void toggle();
+    bool toggle();
 
 private:
     // tells us which port/pin we are working with
-    GPIO_TypeDef* const port_addr{GPIOA};
-    uint8_t pin_number{0};
+    GPIO_TypeDef* const port_addr{nullptr};
+    const uint8_t pin_number{0};
 
     // Config parameters
-    StGpioParams* const params{nullptr};
+    StGpioSettings* const settings{nullptr};
 };
 
 }  // namespace EoT::StmH7

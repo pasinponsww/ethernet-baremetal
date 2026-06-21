@@ -6,8 +6,8 @@ namespace EoT::StmH7
 {
 
 // Configure 3 LEDs
-StGpioParams led_settings{MODER::OUTPUT_MODE, OTYPE::PUSH_PULL,
-                          OSPEED::LOW_SPEED, PUPDR::NO_PU_PD, AF::AF0};
+StGpioSettings led_settings{MODER::OUTPUT_MODE, OTYPE::PUSH_PULL,
+                            OSPEED::LOW_SPEED, PUPDR::NO_PU_PD, AF::AF0};
 
 StGpio led1{GPIOB, 0, &led_settings};
 StGpio led2{GPIOE, 1, &led_settings};
@@ -26,6 +26,7 @@ bool board_init()
 {
     bool result = false;
 
+    //TODO: remove this when sysclk is done
     // Enable clock
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOE_CLK_ENABLE();

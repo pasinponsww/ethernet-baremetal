@@ -2,9 +2,11 @@
 
 using namespace EoT::StmH7;
 
+static constexpr uint16_t PORT_OFFSET{1024};
+
 StGpio::StGpio(GPIO_TypeDef* const port, uint8_t pin_num,
-               StGpioParams* const config)
-    : port_addr(port), pin_number(pin_num), params(config)
+               StGpioSettings* const config)
+    : port_addr(port), pin_number(pin_num), settings(config)
 {
 }
 
@@ -17,45 +19,52 @@ bool StGpio::init()
     auto addr = reinterpret_cast<std::uintptr_t>(port_addr);
 
     // Handle invalid port
-    if (addr % 1024 != 0 || addr < GPIOA_BASE || addr > GPIOK_BASE)
+    if (port_addr == nullptr || addr % PORT_OFFSET != 0 || addr < GPIOA_BASE ||
+        addr > GPIOK_BASE)
         return false;
 
     // GPIOx_MODER
-    SetReg(&(port_addr->MODER), static_cast<uint32_t>(params->mode),
+    SetReg(&(port_addr->MODER), static_cast<uint32_t>(settings->mode),
            pin_number * 2, 2);
 
     // GPIOx_OTYPER
-    SetReg(&(port_addr->OTYPER), static_cast<uint32_t>(params->otype),
+    SetReg(&(port_addr->OTYPER), static_cast<uint32_t>(settings->otype),
            pin_number, 1);
 
     // GPIOx_OSPEEDR
-    SetReg(&(port_addr->OSPEEDR), static_cast<uint32_t>(params->ospeed),
+    SetReg(&(port_addr->OSPEEDR), static_cast<uint32_t>(settings->ospeed),
            pin_number * 2, 2);
 
     // GPIOx_PUPDR
-    SetReg(&(port_addr->PUPDR), static_cast<uint32_t>(params->pupdr),
+    SetReg(&(port_addr->PUPDR), static_cast<uint32_t>(settings->pupdr),
            pin_number * 2, 2);
 
     // Alternate functions
     // GPIOx_AFRL
-    SetReg(&(port_addr->AFR[pin_number / 8]), static_cast<uint32_t>(params->af),
-           (pin_number % 8) * 4, 4);
+    SetReg(&(port_addr->AFR[pin_number / 8]),
+           static_cast<uint32_t>(settings->af), (pin_number % 8) * 4, 4);
 
     return true;
 }
 
-void StGpio::set(uint8_t value)
+bool StGpio::set(uint8_t value)
 {
+    bool result{false};
     SetReg(&(port_addr->ODR), static_cast<uint32_t>(value), pin_number, 1);
+    result = true;
+    return result;
 }
 
-uint8_t StGpio::get()
+bool StGpio::get() const
 {
     return ((port_addr->IDR >> pin_number) && uint32_t{0x01});
 }
 
-void StGpio::toggle()
+bool StGpio::toggle()
 {
+    bool result{false};
     uint32_t bit = ((port_addr->IDR >> pin_number) && uint32_t{0x01});
     SetReg(&(port_addr->ODR), bit ^ 1, pin_number, 1);
+    result = true;
+    return result;
 }

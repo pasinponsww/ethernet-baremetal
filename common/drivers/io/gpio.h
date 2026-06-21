@@ -19,9 +19,9 @@ namespace EoT
 // clang-format off
 template <typename T>
 concept GpioReq = requires(T t, uint8_t value) {
-    { t.set(value) } -> std::same_as<void>;
-    { t.get() } -> std::same_as<uint8_t>;
-    { t.toggle() } -> std::same_as<void>;
+    { t.set(value) } -> std::same_as<bool>;
+    { t.get() } -> std::same_as<bool>;
+    { t.toggle() } -> std::same_as<bool>;
 };
 // clang-format on
 
@@ -42,15 +42,15 @@ public:
      * @brief sets a gpio pin to 1 or 0
      * @param 1 or 0
      */
-    void set(uint8_t value)
+    bool set(uint8_t value)
     {
-        self().set(value);
+        return self().set(value);
     }
 
     /**
      * @brief reads value of pin
      */
-    uint8_t get()
+    bool get() const
     {
         return self().get();
     }
@@ -58,9 +58,9 @@ public:
     /**
      * @brief toggles pin
      */
-    void toggle()
+    bool toggle()
     {
-        self().toggle();
+        return self().toggle();
     }
 
 private:
