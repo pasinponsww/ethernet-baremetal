@@ -14,7 +14,7 @@ StGpio led2{GPIOE, 1, &led_settings};
 StGpio led3{GPIOB, 14, &led_settings};
 
 // Configure SysClk
-StSysclk clock{Configuration::DEFAULT_HSI_64MHz};
+StSysclk clock{Configuration::HSE_8MHZ_PLL};
 
 }  // namespace EoT::StmH7
 

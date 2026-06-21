@@ -91,7 +91,10 @@ static bool SystemClock_ConfigHSE8MHz()
         return false;
 
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+    // Nucleo-H723ZG feeds the 8 MHz HSE from the ST-LINK MCO (a clock signal on
+    // OSC_IN, not a crystal), so HSE must run in bypass mode. RCC_HSE_ON would
+    // wait forever for a crystal that isn't there and time out.
+    RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
 
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
