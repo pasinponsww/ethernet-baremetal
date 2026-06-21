@@ -5,10 +5,12 @@ add_library(hal STATIC
 
 target_include_directories(hal PUBLIC
     .
+    ${CMAKE_SOURCE_DIR}/mcu_support/stm32/h7xx/
+    ${CMAKE_SOURCE_DIR}/common/drivers/io
     ${CMAKE_SOURCE_DIR}/common/core/utils
 )
 
-Uncomment this when you adding the st_gpio.cc/.h
+#Uncomment this when you adding the st_gpio.cc/.h
 target_link_libraries(hal PUBLIC
     st_h7_support
     core 

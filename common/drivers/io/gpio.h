@@ -29,17 +29,16 @@ concept GpioReq = requires(T t, uint8_t value) {
 };
 
 template <typename T>
-    requires GpioReq<T>
 class Gpio
 {
 
 public:
     /**
-     * @brief constructor which uses a static_assert if normal concept syntax doesn't work
+     * @brief constructor which uses a static_assert as normal concept syntax doesn't work
      */
     Gpio()
     {
-        //static_assert(GpioReqT> && std::derived_from<T, Gpio>);
+        static_assert(GpioReq<T> && std::derived_from<T, Gpio>);
     }
 
     /**

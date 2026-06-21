@@ -1,85 +1,18 @@
+/**
+ * @file st_gpio.h
+ * @author Farhaan Khan
+ */
+
 #pragma once
 #include "gpio.h"
-#include "mcu_support/stm32/h7xx/stm32h723xx.h"
-#include "utils/reg_helpers.h"
+#include "reg_helpers.h"
+#include "stm32h723xx.h"
 
-namespace Eot
+namespace EoT::StmH7
 {
-namespace StmH7
-{
+constexpr int MAX_NUM_PINS{16};
 
-class StGpio : EoT::Gpio<StGpio>
-{
-public:
-    /**
-     * @brief Constructor for gpio pin
-     * @param port base addr for port (use PORT macros)
-     * @param pin_num pin number
-     * @param config ptr to gpio config struct
-     */
-
-    StGpio(GPIO_TypeDef* const port, uint8_t pin_num,
-           StGpioParams* const config)
-        : port_addr(port), pin_number(pin_num), params(config)
-    {
-        // How should I handle invalid pin or port numbers?
-
-        // Set the config registers based on the config params
-
-        // GPIOx_MODER
-        SetReg(&(port->MODER), static_cast<uint32_t>(config->mode), pin_num * 2,
-               2);
-
-        // GPIOx_OTYPER
-        SetReg(&(port->OTYPER), static_cast<uint32_t>(config->otype), pin_num,
-               1);
-
-        // GPIOx_OSPEEDR
-        SetReg(&(port->OSPEEDR), static_cast<uint32_t>(config->ospeed),
-               pin_num * 2, 2);
-
-        // GPIOx_PUPDR
-        SetReg(&(port->PUPDR), static_cast<uint32_t>(config->pupdr),
-               pin_num * 2, 2);
-
-        // Alternate functions
-        // GPIOx_AFRL
-        SetReg(&(port->AFR[pin_num / 8]), static_cast<uint32_t>(config->af),
-               (pin_num % 8) * 4, 4);
-    }
-
-    /**
-     * @brief 
-     * @param value 1 or 0
-     */
-
-    void set(uint8_t value)
-    {
-    }
-
-    /**
-     * @brief returns value of pin
-     */
-    uint8_t get()
-    {
-    }
-
-    /**
-     * @brief toggles pin
-     */
-    void toggle()
-    {
-    }
-
-private:
-    // tells us which port/pin we are working with
-    GPIO_TypeDef* const port_addr{GPIOA};
-    uint8_t pin_number{0};
-
-    // Config parameters
-    StGpioParams* const params{nullptr};
-};
-
+// Config enums
 enum class MODER : uint8_t
 {
     INPUT_MODE = 0,
@@ -138,14 +71,46 @@ struct StGpioParams
     AF af;
 };
 
-// explicit StGpio(StGpioParams);
+class StGpio : public EoT::Gpio<StGpio>
+{
+public:
+    /**
+     * @brief Constructor for gpio pin
+     * @param port base addr for port (use PORT macros)
+     * @param pin_num pin number
+     * @param config ptr to gpio config struct
+     */
+    StGpio(GPIO_TypeDef* const port, uint8_t pin_num,
+           StGpioParams* const config);
 
-// using namespace StmH7
+    /**
+     * @brief configures gpio pin
+     */
+    bool init();
 
-// // StGpio::StGpioPrams led_config =
-// //     MODER::INPUTMODE, OTYPE::PUSH_PULL,
-// //     spdasplpdlwpd
-// // };
+    /**
+     * @brief sets a gpio pin to 1 or 0
+     * @param value 1 or 0
+     */
+    void set(uint8_t value);
 
-}  // namespace StmH7
-}  // namespace Eot
+    /**
+     * @brief returns value of gpio pin
+     */
+    uint8_t get();
+
+    /**
+     * @brief toggles pin
+     */
+    void toggle();
+
+private:
+    // tells us which port/pin we are working with
+    GPIO_TypeDef* const port_addr{GPIOA};
+    uint8_t pin_number{0};
+
+    // Config parameters
+    StGpioParams* const params{nullptr};
+};
+
+}  // namespace EoT::StmH7

@@ -2,7 +2,7 @@ if (TARGET_DEVICE MATCHES "^(STM32H7)[0-9]+")
     add_subdirectory(platform/stm32h7)
 endif()
 
-# add_subdirectory(utils)
+#add_subdirectory(utils)
 
 add_library(driver INTERFACE)
 
@@ -13,5 +13,5 @@ target_include_directories(driver INTERFACE
 
 target_link_libraries(driver INTERFACE
     hal
-    driver_utils
+    #driver_utils
 )
