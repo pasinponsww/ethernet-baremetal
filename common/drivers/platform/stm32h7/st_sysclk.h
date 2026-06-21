@@ -31,26 +31,30 @@ enum class Configuration : uint8_t
     DEFAULT_HSI_64MHz = 0,
     HSI_32MHZ,
     HSE_8MHZ_PLL,
-    HSI_16MHZ_DEPRECATED,
 };
 
-class StSysclk : EoT::Sysclk<StSysclk>
+class StSysclk : public EoT::Sysclk<StSysclk>
 {
 public:
+    /**
+    * @brief Constructor for StSysclk
+    * @param[in] config The configuration to use for the system clock
+    */
+    explicit StSysclk(Configuration config);
+
+    /**
+    * @brief Initialize the system clock
+    * @return true if the initialization was successful, false otherwise
+    */
+    bool init();
+
     /**
     * @brief get_freq implementation for STM32H7
     * @return The frequency in Hz
     */
     uint32_t get_freq() const
     {
-    }
-
-    /**
-    * @brief set_freq implementation for STM32H7
-    * @param freq The frequency in Hz
-    */
-    void set_freq(uint32_t freq)
-    {
+        return hz;
     }
 
 private:

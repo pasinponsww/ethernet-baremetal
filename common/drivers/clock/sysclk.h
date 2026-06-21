@@ -19,18 +19,21 @@ namespace EoT
 * - `void set_freq(uint32_t freq)`: A function that sets the frequency of
 *   the system clock to the specified value in Hz.
 */
+
+// clang-format off
 template <typename T>
 concept SysclkReq = requires(const T& t) {
     { t.get_freq() } -> std::same_as<uint32_t>;
-    { t.set_freq(std::declval<uint32_t>()) } -> std::same_as<void>;
 };
 
+// clang-format on
+template <typename T>
 class Sysclk
 {
+public:
     /**
      * @brief Constructor for Sysclk
-     * This constructor is protected to prevent direct instantiation of the Sysclk
-     * class. It also uses a static assertion to ensure that the derived class
+     * It uses a static assertion to ensure that the derived class
      * meets the requirements of the SysclkReq concept.
      */
     Sysclk()
@@ -44,16 +47,7 @@ class Sysclk
     */
     uint32_t get_freq() const
     {
-        return self.get_freq();
-    }
-
-    /**
-    * @brief Set the frequency of the user input via BSP
-    * @param freq The frequency in Hz
-    */
-    void set_freq(uint32_t freq)
-    {
-        self.set_freq(freq);
+        return self().get_freq();
     }
 
 private:
@@ -61,9 +55,9 @@ private:
     * @brief Helper function to cast this to the derived class
     * @return Reference to the derived class
     */
-    T& self()
+    const T& self() const
     {
-        return static_cast<T&>(*this);
+        return static_cast<const T&>(*this);
     }
 };
 }  // namespace EoT
