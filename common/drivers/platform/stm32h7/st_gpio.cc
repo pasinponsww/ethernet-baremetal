@@ -23,6 +23,14 @@ bool StGpio::init()
         addr > GPIOK_BASE)
         return false;
 
+    // Enable the GPIO port clock. The RCC->AHB4ENR enable bit index equals the
+    // port index (GPIOA = 0, GPIOB = 1, ... GPIOK = 10), which is the port's
+    // address offset from GPIOA divided by the per-port spacing.
+    uint32_t port_index = (addr - GPIOA_BASE) / PORT_OFFSET;
+    SetReg(&(RCC->AHB4ENR), 1, port_index, 1);
+    (void)
+        RCC->AHB4ENR;  // read-back so the clock is up before we touch the port
+
     // GPIOx_MODER
     SetReg(&(port_addr->MODER), static_cast<uint32_t>(settings->mode),
            pin_number * 2, 2);
