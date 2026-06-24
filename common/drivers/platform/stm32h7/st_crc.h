@@ -58,19 +58,19 @@ struct StCrcSettings
 /**
 * @brief This struct is used to configure the CRC peripheral
 */
-struct StCrcParams 
+struct StCrcParams
 {
     StCrcSettings settings;
-    CRC_TypeDef* crc;  
+    CRC_TypeDef* crc;
     uint32_t initial_crc;
-    uint32_t generator_polynomial{0x4C11DB7};  
+    uint32_t generator_polynomial{0x4C11DB7};
     uint32_t XOR_out;
 };
 
 class StCrc : public EoT::Crc<StCrc>
 {
 public:
-    StCrc(const StCrcParams& params);
+    explicit StCrc(const StCrcParams& params);
 
     /**
      * @brief Initialize the CRC peripheral
