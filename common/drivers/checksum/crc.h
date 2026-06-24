@@ -76,20 +76,17 @@ public:
     */
     bool compare(std::span<const uint32_t> data, uint32_t expected)
     {
-        uint32_t result{};
-        return compute(data, result) && result == expected;
+        return self().compare(data, expected);
     }
 
     bool compare(std::span<const uint16_t> data, uint32_t expected)
     {
-        uint32_t result{};
-        return compute(data, result) && result == expected;
+        return self().compare(data, expected);
     }
 
     bool compare(std::span<const uint8_t> data, uint32_t expected)
     {
-        uint32_t result{};
-        return compute(data, result) && result == expected;
+        return self().compare(data, expected);
     }
 
 private:
