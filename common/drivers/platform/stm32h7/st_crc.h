@@ -8,11 +8,14 @@
 #include "reg_helpers.h"
 #include "stm32h723xx.h"
 
+/* The Ethernet CRC is basically the standard CRC-32 with this generator-polynomial-byte: 0x4C11DB7 */
+/* @note Be aware that we normalized all of our result to CRC-32 byte when compare() but compute() could be scale from 8/16/32 */
 namespace EoT::StmH7
 {
 
 /**
 * @brief Used to control the reversal of the bit order of the output data
+* This is for the endianess of the CRC result. If the output is reversed, the least significant bit will be output first.
 */
 enum class CrcRevOut : uint8_t
 {
@@ -22,6 +25,7 @@ enum class CrcRevOut : uint8_t
 
 /**
  * @brief This is to control the reversal of the bit order of each input data
+ * This is the endianess of the input data. If the input is reversed, the least significant bit will be input first.
  */
 enum class CrcRevIn : uint8_t
 {
@@ -37,12 +41,13 @@ enum class CrcRevIn : uint8_t
 */
 enum class CrcPolySize : uint8_t
 {
-    BIT_SIZE_32 = 0,
-    BIT_SIZE_16,
-    BIT_SIZE_8,
-    BIT_SIZE_7
+    SIZE_32 = 0,
+    SIZE_16,
+    SIZE_8,
+    SIZE_7
 };
 
+// Simplified struct for CRC settings
 struct StCrcSettings
 {
     CrcRevOut reverse_out;
@@ -50,18 +55,31 @@ struct StCrcSettings
     CrcPolySize poly_size;
 };
 
+/**
+* @brief This struct is used to configure the CRC peripheral
+*/
+struct StCrcParams 
+{
+    StCrcSettings settings;
+    CRC_TypeDef* crc;  
+    uint32_t initial_crc;
+    uint32_t generator_polynomial{0x4C11DB7};  
+    uint32_t XOR_out;
+};
+
 class StCrc : public EoT::Crc<StCrc>
 {
 public:
-    StCrc(CRC_TypeDef* const crc, uint32_t initial_crc,
-          uint32_t generator_polynomial = 0x4C11DB7, uint32_t XOR_out,
-          StCrcSettings* const config);
+    StCrc(const StCrcParams& params);
 
     /**
      * @brief Initialize the CRC peripheral
      * @return true if the initialization was successful, false otherwise
      */
     bool init();
+
+    /* Assume the compute() function doesn't know at the runtime that it will be a 
+    fix-size of byte (I populate the function into 3 variant of 32/16/8 bytes)*/
 
     /**
      * @brief Compute the CRC for the given data
@@ -88,13 +106,16 @@ private:
     * @brief Helper function for loading data into the CRC peripheral
     * @param value The value to load into the CRC peripheral
     */
-    void load(uint8_t value);
-    void load(uint16_t value);
-    void load(uint32_t value);
+    void feed(uint8_t value);
+    void feed(uint16_t value);
+    void feed(uint32_t value);
 
-    CRC_TypeDef* const crc{CRC};  // pointer to the CRC peripheral
+    /* All of the CRC params */
+
+    CRC_TypeDef* const crc;
+    StCrcSettings settings;
     uint32_t initial_crc;
-    uint32_t generator_polynomial{0x4C11DB7};  // default 0x4C11DB7
-    uint32_t XOR_out;
+    uint32_t generator_polynomial;
+    uint32_t xor_out;
 };
 }  // namespace EoT::StmH7
