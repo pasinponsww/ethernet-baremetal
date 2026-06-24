@@ -17,20 +17,22 @@ namespace StmH7
 
 /**
 * @brief Clock configuration options for STM32H7
-* @note DEFAULT_HSI_64MHz is the default configuration
-*       HSI_32MHZ is a lower frequency option for power saving
-*       HSE_8MHZ_PLL uses an external crystal offer by stm32h723
-*       HSI_16MHZ_DEPRECATED is a deprecated option that should not be used
+* @note DEFAULT_HSI_64MHz is the default configuration (HCLK 64 MHz).
+*       HSI_32MHZ is a lower frequency option for power saving (HCLK 32 MHz).
+*       HSE_8MHZ_PLL runs straight off the 8 MHz HSE bypass (HCLK 8 MHz).
+*         WARNING: 8 MHz HCLK is below the Ethernet MAC minimum (25 MHz) and
+*         must NOT be used for networking - throughput collapses (~100 KB/s).
+*       ETH_RMII_200MHZ is the Ethernet-grade option: HSE 8 MHz -> PLL,
+*         200 MHz SYSCLK / 100 MHz HCLK. The 50 MHz RMII_REF_CLK is supplied
+*         externally by the LAN8742 on PA1, so it is not generated here.
 */
-
-/* For Ethernet we should use HSE_8MHZ_PLL because it provides better accuracy */
-/* Though it's slow and power consuming, byte-per-second was about 100KB/s */
 
 enum class Configuration : uint8_t
 {
     DEFAULT_HSI_64MHz = 0,
     HSI_32MHZ,
     HSE_8MHZ_PLL,
+    ETH_RMII_200MHZ,  // HSE 8 MHz -> PLL, 200 MHz sys / 100 MHz HCLK
 };
 
 class StSysclk : public EoT::Sysclk<StSysclk>
@@ -56,6 +58,15 @@ public:
     {
         return hz;
     }
+
+    /**
+    * @brief Whether the current clock tree can drive the Ethernet MAC/DMA.
+    * @note  The STM32H7 ETH peripheral requires HCLK >= 25 MHz. The 50 MHz
+    *        RMII_REF_CLK is supplied externally by the LAN8742 PHY (PA1), so
+    *        it is NOT validated here - this only checks the AHB/HCLK floor.
+    * @return true if HCLK >= 25 MHz.
+    */
+    bool is_eth_capable() const;
 
 private:
     uint32_t hz;
