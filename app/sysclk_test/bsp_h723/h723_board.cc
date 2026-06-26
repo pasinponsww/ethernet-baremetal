@@ -28,6 +28,9 @@ Board<StmH7::StGpio, StmH7::StSysclk> board{.led1 = StmH7::led1,
 
 bool board_init()
 {
+    // Enable GPIOB and GPIOE clocks for the LEDs
+    RCC->AHB4ENR |= RCC_AHB4ENR_GPIOBEN | RCC_AHB4ENR_GPIOEEN;
+
     bool result = false;
 
     result = StmH7::clock.init();
