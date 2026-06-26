@@ -18,9 +18,9 @@ namespace EoT
 
 // clang-format off
 template <typename T>
-concept UsartReq = requires(T t, const std::span<const uint8_t> data) {
+concept UsartReq = requires(T t, const std::span<const uint8_t> data, uint8_t& byte) {
     { t.send(data) } -> std::same_as<bool>;
-    { t.receive() } -> std::same_as<bool>;
+    { t.receive(byte) } -> std::same_as<bool>;
 };
 // clang-format on
 
@@ -41,9 +41,9 @@ public:
         return self().send(data);
     }
 
-    bool receive()
+    bool receive(uint8_t& byte)
     {
-        return self().receive();
+        return self().receive(byte);
     }
 
 private:
