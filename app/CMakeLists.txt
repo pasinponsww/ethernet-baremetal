@@ -1,3 +1,4 @@
 add_subdirectory(blink)
 add_subdirectory(sysclk_test)
 add_subdirectory(usart_test)
+add_subdirectory(crc_test)
