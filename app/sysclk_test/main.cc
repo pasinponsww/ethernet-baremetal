@@ -12,8 +12,7 @@ using namespace EoT;
 int main(int argc, char* argv[])
 {
     board_init();
-    Board<StmH7::StGpio, StmH7::StSysclk>& hw =
-        get_board<StmH7::StGpio, StmH7::StSysclk>();
+    HwBoard& hw = get_hw();
 
     std::array<std::reference_wrapper<Gpio<StmH7::StGpio>>, 3> leds{
         std::ref(hw.led1), std::ref(hw.led2), std::ref(hw.led3)};

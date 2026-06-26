@@ -44,4 +44,10 @@ get_board<StmH7::StGpio, StmH7::StSysclk>(void)
 {
     return board;
 }
+
+// Defined here so the template specialization above is already complete
+HwBoard& get_hw()
+{
+    return get_board<StmH7::StGpio, StmH7::StSysclk>();
+}
 }  // namespace EoT
