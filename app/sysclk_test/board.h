@@ -1,11 +1,11 @@
 #pragma once
 #include "gpio.h"
+#include "st_gpio.h"
+#include "st_sysclk.h"
 #include "sysclk.h"
 
 namespace EoT
 {
-
-/* This test is a blink but in different config of the sysclk */
 
 template <typename TGpio, typename TClk>
 struct Board
@@ -16,9 +16,16 @@ struct Board
     Sysclk<TClk>& clock;
 };
 
-bool board_init(void);
+bool board_init();
 
 template <typename TGpio, typename TClk>
-Board<TGpio, TClk>& get_board(void);
+Board<TGpio, TClk>& get_board();
+
+// StmH7 is now visible as EoT::StmH7 from the includes above
+using HwBoard = Board<StmH7::StGpio, StmH7::StSysclk>;
+
+// From now on we going to use this instance of the board,
+// so we can use it in the main.cc without knowing the template parameters
+HwBoard& get_hw();
 
 }  // namespace EoT
