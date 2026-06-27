@@ -1,8 +1,8 @@
 #include "board.h"
+#include "delay.h"
 #include "st_gpio.h"
 #include "st_sysclk.h"
 #include "st_usart.h"
-#include "delay.h"
 
 using namespace EoT;
 
@@ -17,6 +17,5 @@ int main(int argv, char* argc[])
         hw.usart.send(message);
     }
 
-    Utils::delay_ms(5000); 
-
+    Utils::delay_ms(5000);
 }

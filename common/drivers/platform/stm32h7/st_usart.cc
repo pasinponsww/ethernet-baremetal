@@ -11,16 +11,27 @@ bool StUsart::init()
 {
 
     if (params->base_addr == nullptr)
+    {
         return false;
+    }
 
     // Make sure UART is disabled before config
     params->base_addr->CR1 &= ~USART_CR1_UE;
 
+    // Clear any active error flags left over from previous runs
+    params->base_addr->ICR = USART_ICR_ORECF | USART_ICR_FECF | USART_ICR_NECF;
+
     // FIFO mode
     if (params->fifo_mode)
+    {
+        // Set the FIFOEN bit to enable FIFO mode
         params->base_addr->CR1 |= USART_CR1_FIFOEN;
+    }
     else
-        params->base_addr->CR1 |= USART_CR1_FIFOEN;
+    {
+        // Clear the FIFOEN bit to disable FIFO mode
+        params->base_addr->CR1 &= ~USART_CR1_FIFOEN;
+    }
 
     // 8 data bits, no parity, 1 stop bit
     params->base_addr->CR1 &= ~USART_CR1_M;
@@ -40,13 +51,17 @@ bool StUsart::init()
 
     else
     {
+        // Oversampling OS_8
+
+        uint16_t top = usart_div & 0xFFF0;
+        uint16_t bottom = (usart_div & 0x000F) >> 1;
+        params->base_addr->BRR = top | bottom;
         // BRR[15:4] = USARTDIV[15:4] (copied directly)
         // BRR[2:0]  = USARTDIV[3:0] >> 1 (shifted right, bit 0 discarded)
         // BRR[3]    = 0 (must be kept cleared, shift handles this naturally)
         params->base_addr->CR1 |= USART_CR1_OVER8_Msk;
         usart_div = (2 * params->clk_freq) / params->baud_rate;
-        params->base_addr->BRR =
-            (usart_div & 0xFFF0) | ((usart_div & 0x000F) >> 1);
+        params->base_addr->BRR = usart_div;
     }
 
     // Enable USART, RE, and TE

@@ -1,11 +1,11 @@
 #include "board.h"
+#include "delay.h"
 #include "st_gpio.h"
 #include "st_sysclk.h"
 #include "st_usart.h"
-#include "delay.h"
 #include "stm32h7xx_hal.h"
 
-uint8_t rxb;
+inline uint8_t rxb;
 
 namespace EoT::StmH7
 {
@@ -17,11 +17,11 @@ StGpioSettings tx_settings{MODER::ALTERNATE_FUNCTION_MODE, OTYPE::PUSH_PULL,
                            OSPEED::LOW_SPEED, PUPDR::NO_PU_PD, AF::AF7};
 
 // Configure UART
-StUsartSettings usart_params{USART3, 115200, 64000000, true,
+StUsartSettings usart_params{USART3, 115200, 64000000, false,
                              OversamplingMode::OS_16};
 
 // Configure SysClk
-StSysclk clock{Configuration::HSE_8MHZ_PLL};
+StSysclk clock{Configuration::DEFAULT_HSI_64MHz};
 
 StGpio rx{GPIOD, 9, &rx_settings};
 StGpio tx{GPIOD, 8, &tx_settings};
@@ -40,15 +40,18 @@ Board<StmH7::StGpio, StmH7::StSysclk, StmH7::StUsart> board{
 
 bool board_init()
 {
+    // Enable GPIOD clock
+    RCC->AHB4ENR |= RCC_AHB4ENR_GPIODEN;
+
+    // Enable USART3 clock
+    RCC->APB1LENR |= RCC_APB1LENR_USART3EN;
+
     bool result = false;
 
+    result = StmH7::clock.init();
     result = StmH7::rx.init();
     result = StmH7::tx.init();
     result = StmH7::usart.init();
-    result = StmH7::clock.init();
-
-    // Enable USART3 clock
-    RCC->APB1LENR |= RCC_APB1LENR_USART3EN; 
 
     // Nested Vectored Interrupt Controller (NVIC) - a hardware block that sits between peripherals and CPU.
     // Manages every interrupt in the system.
