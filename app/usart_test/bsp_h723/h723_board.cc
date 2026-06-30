@@ -17,11 +17,11 @@ StGpioSettings tx_settings{MODER::ALTERNATE_FUNCTION_MODE, OTYPE::PUSH_PULL,
                            OSPEED::LOW_SPEED, PUPDR::NO_PU_PD, AF::AF7};
 
 // Configure UART
-StUsartSettings usart_params{USART3, 115200, 64000000, false,
+StUsartSettings usart_params{USART3, 9600, 8000000, false,
                              OversamplingMode::OS_16};
 
 // Configure SysClk
-StSysclk clock{Configuration::DEFAULT_HSI_64MHz};
+StSysclk clock{Configuration::HSE_8MHZ_PLL};
 
 StGpio rx{GPIOD, 9, &rx_settings};
 StGpio tx{GPIOD, 8, &tx_settings};

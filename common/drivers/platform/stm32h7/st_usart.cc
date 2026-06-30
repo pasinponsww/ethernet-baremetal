@@ -3,6 +3,8 @@
 namespace EoT::StmH7
 {
 
+static constexpr uint16_t BRR_TEST_VAL{833};
+
 StUsart::StUsart(StUsartSettings* config) : params(config)
 {
 }
@@ -45,8 +47,9 @@ bool StUsart::init()
     {
         //BRR[16:0] = USARTDIV
         params->base_addr->CR1 &= ~USART_CR1_OVER8_Msk;
-        usart_div = params->clk_freq / params->baud_rate;
-        params->base_addr->BRR = usart_div;
+        // usart_div = params->clk_freq / params->baud_rate;
+        // params->base_addr->BRR = usart_div;
+        params->base_addr->BRR = BRR_TEST_VAL;
     }
 
     else
