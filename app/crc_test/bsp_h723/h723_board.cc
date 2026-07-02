@@ -3,6 +3,7 @@
 #include "st_crc.h"
 #include "st_gpio.h"
 #include "st_sysclk.h"
+#include "st_usart.h"
 
 namespace EoT::StmH7
 {
@@ -17,19 +18,24 @@ StCrcSettings crc_settings{CrcRevOut::NO_REV, CrcRevIn::NO_REV,
 const StCrcParams crc_params{crc_settings, CRC, kCrcValue, kDefaultPoly,
                              kCrcXOROut};
 
-StGpioSettings uart_io_settings{MODER::ALTERNATE_FUNCTION_DRAIN,
+StGpioSettings uart_io_settings{MODER::ALTERNATE_FUNCTION_MODE,
                                 OTYPE::PUSH_PULL, OSPEED::LOW_SPEED,
                                 PUPDR::NO_PU_PD, AF::AF7};
 
-StSysclk clock{Configuration::DEFAULT_HSI_64MHz};
-StCrc crc{crc_params};
+// Configure USART
+StUsartSettings usart_params{USART3, 115200, 64'000'000, true,
+                             OversamplingMode::OS_16};
 
+StSysclk clock{Configuration::DEFAULT_HSI_64MHz};
+
+StCrc crc{crc_params};
+StUsart usart{&usart_params};
 // USART3 is connected to GPIOD pins 8 (TX) and 9 (RX)
 StGpio tx{GPIOD, 8, &uart_io_settings};
 StGpio rx{GPIOD, 9, &uart_io_settings};
 
 // The one and only board instance
-Board<StGpio, StSysclk, StCrc> board{tx, rx, clock, crc};
+Board<StGpio, StSysclk, StCrc, StUsart> board{tx, rx, clock, crc, usart};
 
 }  // namespace EoT::StmH7
 
@@ -41,12 +47,14 @@ bool board_init()
     RCC->AHB4ENR |= RCC_AHB4ENR_GPIODEN;  // GPIOD clock for USART3 TX/RX
     RCC->AHB4ENR |= RCC_AHB4ENR_GPIOBEN | RCC_AHB4ENR_GPIOEEN;  // LED GPIOs
     RCC->APB1LENR |= RCC_APB1LENR_USART3EN;                     // USART3 clock
+    RCC->AHB4ENR |= RCC_AHB4ENR_CRCEN;                          // CRC clock
 
     bool result = true;
     result &= StmH7::crc.init();
     result &= StmH7::clock.init();
     result &= StmH7::tx.init();
     result &= StmH7::rx.init();
+    result &= StmH7::usart.init();
 
     NVIC_SetPriority(USART3_IRQn, 0);
     NVIC_EnableIRQ(USART3_IRQn);
@@ -55,15 +63,16 @@ bool board_init()
 }
 
 template <>
-Board<StmH7::StGpio, StmH7::StSysclk, StmH7::StCrc>&
-get_board<StmH7::StGpio, StmH7::StSysclk, StmH7::StCrc>()
+Board<StmH7::StGpio, StmH7::StSysclk, StmH7::StCrc, StmH7::StUsart>&
+get_board<StmH7::StGpio, StmH7::StSysclk, StmH7::StCrc, StmH7::StUsart>()
 {
     return StmH7::board;
 }
 
 HwBoard& get_hw()
 {
-    return get_board<StmH7::StGpio, StmH7::StSysclk, StmH7::StCrc>();
+    return get_board<StmH7::StGpio, StmH7::StSysclk, StmH7::StCrc,
+                     StmH7::StUsart>();
 }
 
 std::vector<uint8_t> simulate_noise(std::span<const uint8_t> data,

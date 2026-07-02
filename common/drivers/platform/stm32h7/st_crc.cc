@@ -27,6 +27,15 @@ inline void StCrc::feed(uint32_t value)
     *dr32 = value;
 }
 
+static inline void reset_crc(CRC_TypeDef* crc)
+{
+    crc->CR |= CRC_CR_RESET;
+
+    while ((crc->CR & CRC_CR_RESET) != 0U)
+    {
+    }
+}
+
 StCrc::StCrc(const StCrcParams& params)
     : crc(params.crc),
       settings(params.settings),
@@ -64,7 +73,7 @@ bool StCrc::init()
     crc->POL = generator_polynomial;
 
     // Reset the CRC
-    crc->CR |= CRC_CR_RESET;
+    reset_crc(crc);
 
     return true;
 }
@@ -72,7 +81,7 @@ bool StCrc::init()
 bool StCrc::compute(std::span<const uint32_t> data, uint32_t& result)
 {
     // CRC Reset (The computation need to basically refresh it's bit to compute the next set of byte given)
-    crc->CR |= CRC_CR_RESET;
+    reset_crc(crc);
 
     // Compute the bits given the input
     for (auto word : data)
@@ -89,7 +98,7 @@ bool StCrc::compute(std::span<const uint32_t> data, uint32_t& result)
 bool StCrc::compute(std::span<const uint16_t> data, uint32_t& result)
 {
     // CRC Reset (The computation need to basically refresh it's bit to compute the next set of byte given)
-    crc->CR |= CRC_CR_RESET;
+    reset_crc(crc);
 
     // Compute the bits given the input
     for (auto half_word : data)
@@ -106,7 +115,7 @@ bool StCrc::compute(std::span<const uint16_t> data, uint32_t& result)
 bool StCrc::compute(std::span<const uint8_t> data, uint32_t& result)
 {
     // CRC Reset (The computation need to basically refresh it's bit to compute the next set of byte given)
-    crc->CR |= CRC_CR_RESET;
+    reset_crc(crc);
 
     // Compute the bits given the input
     for (auto byte : data)
@@ -122,38 +131,38 @@ bool StCrc::compute(std::span<const uint8_t> data, uint32_t& result)
 
 bool StCrc::compare(std::span<const uint32_t> data, uint32_t expected)
 {
-    uint32_t expected_crc;  // we normalized our result to CRC-32
+    uint32_t actual = 0;
 
-    if (compute(data, expected_crc))
+    if (!compute(data, actual))
     {
-        return (expected == expected_crc);
+        return false;
     }
 
-    return false;
+    return actual == expected;
 }
 
 bool StCrc::compare(std::span<const uint16_t> data, uint32_t expected)
 {
-    uint32_t expected_crc;  // we normalized our result to CRC-32
+    uint32_t actual = 0;
 
-    if (compute(data, expected_crc))
+    if (!compute(data, actual))
     {
-        return (expected == expected_crc);
+        return false;
     }
 
-    return false;
+    return actual == expected;
 }
 
 bool StCrc::compare(std::span<const uint8_t> data, uint32_t expected)
 {
-    uint32_t expected_crc;  // we normalized our result to CRC-32
+    uint32_t actual = 0;
 
-    if (compute(data, expected_crc))
+    if (!compute(data, actual))
     {
-        return (expected == expected_crc);
+        return false;
     }
 
-    return false;
+    return actual == expected;
 }
 
 }  // namespace EoT::StmH7
