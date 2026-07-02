@@ -17,7 +17,7 @@ enum class MODER : uint8_t
 {
     INPUT_MODE = 0,
     OUTPUT_MODE = 1,
-    ALTERNATE_FUNCTION_DRAIN = 2,
+    ALTERNATE_FUNCTION_MODE = 2,
     ANALOG_MODE = 3
 };
 
