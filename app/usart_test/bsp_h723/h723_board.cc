@@ -5,7 +5,7 @@
 #include "st_usart.h"
 #include "stm32h7xx_hal.h"
 
-inline uint8_t rxb;
+uint8_t rxb;
 
 namespace EoT::StmH7
 {
@@ -17,11 +17,11 @@ StGpioSettings tx_settings{MODER::ALTERNATE_FUNCTION_MODE, OTYPE::PUSH_PULL,
                            OSPEED::LOW_SPEED, PUPDR::NO_PU_PD, AF::AF7};
 
 // Configure UART
-StUsartSettings usart_params{USART3, 9600, 8000000, false,
+StUsartSettings usart_params{USART3, 115200, 64'000'000, true,
                              OversamplingMode::OS_16};
 
 // Configure SysClk
-StSysclk clock{Configuration::HSE_8MHZ_PLL};
+StSysclk clock{Configuration::DEFAULT_HSI_64MHz};
 
 StGpio rx{GPIOD, 9, &rx_settings};
 StGpio tx{GPIOD, 8, &tx_settings};
@@ -40,13 +40,13 @@ Board<StmH7::StGpio, StmH7::StSysclk, StmH7::StUsart> board{
 
 bool board_init()
 {
+    bool result = false;
+
     // Enable GPIOD clock
     RCC->AHB4ENR |= RCC_AHB4ENR_GPIODEN;
 
     // Enable USART3 clock
     RCC->APB1LENR |= RCC_APB1LENR_USART3EN;
-
-    bool result = false;
 
     result = StmH7::clock.init();
     result = StmH7::rx.init();
@@ -72,12 +72,13 @@ get_board<StmH7::StGpio, StmH7::StSysclk, StmH7::StUsart>(void)
 
 extern "C" void USART3_IRQHandler(void)
 {
-    if (StmH7::usart_params.base_addr->ISR & USART_ISR_RXNE_RXFNE)
+    if (StmH7::usart.get_addr()->ISR & USART_ISR_RXNE_RXFNE)
     {
         if (board.usart.receive(rxb))
         {
             // Echo byte back
-            board.usart.send(std::span<uint8_t>(&rxb, 1));
+            std::span<const uint8_t> txbuf(&rxb, 1);
+            board.usart.send(txbuf);
         }
     }
 }

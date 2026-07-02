@@ -21,7 +21,7 @@ struct StUsartSettings
     USART_TypeDef* base_addr{nullptr};
     uint32_t baud_rate{115200};
     uint32_t clk_freq;
-    bool fifo_mode{true};
+    bool fifo_mode{false};
     OversamplingMode sampling_mode{OversamplingMode::OS_16};
 };
 
@@ -50,6 +50,8 @@ public:
      * @param byte where data is stored
      */
     bool receive(uint8_t& byte);
+
+    USART_TypeDef* get_addr() const;
 
 private:
     StUsartSettings* const params;

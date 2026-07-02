@@ -11,7 +11,7 @@ struct Board
 {
     Gpio<TGpio>& rx;
     Gpio<TGpio>& tx;
-    Usart<TUsart> usart;
+    Usart<TUsart>& usart;
     Sysclk<TClk>& clock;
 };
 

@@ -20,9 +20,6 @@ bool StUsart::init()
     // Make sure UART is disabled before config
     params->base_addr->CR1 &= ~USART_CR1_UE;
 
-    // Clear any active error flags left over from previous runs
-    params->base_addr->ICR = USART_ICR_ORECF | USART_ICR_FECF | USART_ICR_NECF;
-
     // FIFO mode
     if (params->fifo_mode)
     {
@@ -47,9 +44,8 @@ bool StUsart::init()
     {
         //BRR[16:0] = USARTDIV
         params->base_addr->CR1 &= ~USART_CR1_OVER8_Msk;
-        // usart_div = params->clk_freq / params->baud_rate;
-        // params->base_addr->BRR = usart_div;
-        params->base_addr->BRR = BRR_TEST_VAL;
+        usart_div = params->clk_freq / params->baud_rate;
+        params->base_addr->BRR = usart_div;
     }
 
     else
@@ -67,8 +63,14 @@ bool StUsart::init()
         params->base_addr->BRR = usart_div;
     }
 
-    // Enable USART, RE, and TE
-    params->base_addr->CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+    // Enable USART
+    params->base_addr->CR1 |= USART_CR1_UE;
+
+    // Enable transmitter (sends idle frame)
+    params->base_addr->CR1 |= USART_CR1_TE;
+
+    // Enable receiver
+    params->base_addr->CR1 |= USART_CR1_RE;
 
     // Enable RXNE Interrupt
     params->base_addr->CR1 |= USART_CR1_RXNEIE_RXFNEIE;
@@ -99,7 +101,6 @@ bool StUsart::send(const std::span<const uint8_t> data)
 // uses interrupts
 bool StUsart::receive(uint8_t& byte)
 {
-    //
     if (!(params->base_addr->ISR & USART_ISR_RXNE_RXFNE))
     {
         return false;
@@ -108,6 +109,11 @@ bool StUsart::receive(uint8_t& byte)
     // Read RDR (or oldest data in RXFIFO)
     byte = params->base_addr->RDR;
     return true;
+}
+
+USART_TypeDef* StUsart::get_addr() const
+{
+    return params->base_addr;
 }
 
 }  // namespace EoT::StmH7
