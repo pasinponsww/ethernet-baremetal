@@ -1,18 +1,11 @@
-/**
-* @file st_rcc.h
-* @brief STM32H7 RCC (Reset and Clock Control) driver implementation
-* @author Bex Sawetrattanathumrong
-* @date 7/1/2026
-*/
+#pragma once
 
-#include "rcc.h"
-#include "stm32h732xx.h"
 #include <cstdint>
+#include "stm32h723xx.h"
 
-namespace EoT
+namespace EoT::StmH7
 {
-namespace StmH7
-{
+
 enum class GpioPort : uint8_t
 {
     A = 0,
@@ -22,88 +15,91 @@ enum class GpioPort : uint8_t
     E,
     F,
     G,
-    H,
+    H
 };
 
-enum class Usart : uint8_t
+enum class UartId : uint8_t
 {
-    Usart1 = 0,
-    Usart2,
-    Usart3,
-    Uart4,
-    Uart5,
+    U1 = 0,
+    U2,
+    U3,
+    U4,
+    U5,
+    U6,
+    U7,
+    U8,
+};
+
+enum class DmaId : uint8_t
+{
+    D1 = 0,
+    D2,
 };
 
 enum class EthernetClock : uint8_t
 {
     Mac = 0,
     Tx,
-    Rx,
-};
-
-enum class Dma : uint8_t
-{
-    Dma1 = 0,
-    Dma2,
+    Rx
 };
 
 enum class AhbPeriph : uint8_t
 {
-    Crc,
+    Crc
 };
 
-class StRcc : public EoT::Rcc<StRcc>
+}  // namespace EoT::StmH7
+
+#include "rcc.h"
+
+namespace EoT::StmH7
+{
+
+class StRcc : public Rcc<StRcc>
 {
 public:
-    StRcc() : base_addr(RCC) {}
+    explicit StRcc();
 
     /**
-    * @brief Enables the clock for the specified peripheral.
-    * @param peripheral The peripheral for which to enable the clock.
-    * @return true if the clock was successfully enabled, false otherwise.
-    */
+     * @brief Enable the clock for the specified Ethernet peripheral.
+     * @param clock The Ethernet clock to enable.
+     * @return true if the clock was enabled, false otherwise.
+     */
     bool enable_eth_clock(EthernetClock clock);
 
     /**
-    * @brief Enables the clock for the specified GPIO port.
-    * @param port The GPIO port for which to enable the clock.
-    * @return true if the clock was successfully enabled, false otherwise.
-    */
+     * @brief Enable the clock for the specified GPIO port.
+     * @param port The GPIO port for which to enable the clock.
+     * @return true if the clock was enabled, false otherwise.
+     */
     bool enable_gpio_clock(GpioPort port);
 
     /**
-    * @brief Enables the clock for the specified USART.
-    * @param usart The USART for which to enable the clock.
-    * @return true if the clock was successfully enabled, false otherwise.
-    */
-    bool enable_uart_clock(Usart usart);
+     * @brief Enable the clock for the specified USART peripheral.
+     * @param usart The USART peripheral for which to enable the clock.
+     * @return true if the clock was enabled, false otherwise.
+     */
+    bool enable_uart_clock(UartId usart);
 
     /**
-    * @brief Enables the clock for the specified DMA controller.
-    * @param dma The DMA controller for which to enable the clock.
-    * @return true if the clock was successfully enabled, false otherwise.
-    */
-    bool enable_dma_clock(Dma dma);
+     * @brief Enable the clock for the specified DMA controller.
+     * @param dma The DMA controller for which to enable the clock.
+     * @return true if the clock was enabled, false otherwise.
+     */
+    bool enable_dma_clock(DmaId dma);
 
     /**
-    * @brief Enables the clock for the specified AHB peripheral.
-    * @param peripheral The AHB peripheral for which to enable the clock.
-    * @return true if the clock was successfully enabled, false otherwise.
-    */
+     * @brief Enable the clock for the specified AHB peripheral.
+     * @param peripheral The AHB peripheral for which to enable the clock.
+     * @return true if the clock was enabled, false otherwise.
+     */
     bool enable_crc_clock(AhbPeriph peripheral);
 
-    /**
-    * @brief Gets the frequency of the RCC clock.
-    * @return The frequency of the RCC clock in Hz.
-    */
     uint32_t get_freq() const;
 
 private:
     RCC_TypeDef* const base_addr;
-
-    // get_freq() is here to provide the frequency of the RCC clock.
-    uint32_t freq{0}; 
-
+    uint32_t freq{0};
 };
-}  // namespace StmH7
-}
+
+}  // namespace EoT::StmH7
