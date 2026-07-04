@@ -1,5 +1,6 @@
 #include "board.h"
 #include "st_gpio.h"
+#include "st_rcc.h"
 #include "st_sysclk.h"
 
 namespace EoT::StmH7
@@ -16,23 +17,27 @@ StGpio led3{GPIOB, 14, &led_settings};
 // Configure SysClk
 StSysclk clock{Configuration::HSE_8MHZ_PLL};
 
+// Configure RCC
+StRcc rcc{};
+
 }  // namespace EoT::StmH7
 
 namespace EoT
 {
 
-Board<StmH7::StGpio, StmH7::StSysclk> board{.led1 = StmH7::led1,
-                                            .led2 = StmH7::led2,
-                                            .led3 = StmH7::led3,
-                                            .clock = StmH7::clock};
+Board<StmH7::StGpio, StmH7::StSysclk, StmH7::StRcc> board{.led1 = StmH7::led1,
+                                                          .led2 = StmH7::led2,
+                                                          .led3 = StmH7::led3,
+                                                          .clock = StmH7::clock,
+                                                          .rcc = StmH7::rcc};
 
 bool board_init()
 {
     // Enable GPIOB and GPIOE clocks for the LEDs
-    RCC->AHB4ENR |= RCC_AHB4ENR_GPIOBEN | RCC_AHB4ENR_GPIOEEN;
-
     bool result = false;
 
+    result = StmH7::rcc.enable_gpio_clock(StmH7::GpioPort::B);
+    result = StmH7::rcc.enable_gpio_clock(StmH7::GpioPort::E);
     result = StmH7::clock.init();
     result = StmH7::led1.init();
     result = StmH7::led2.init();
@@ -42,8 +47,8 @@ bool board_init()
 }
 
 template <>
-Board<StmH7::StGpio, StmH7::StSysclk>&
-get_board<StmH7::StGpio, StmH7::StSysclk>(void)
+Board<StmH7::StGpio, StmH7::StSysclk, StmH7::StRcc>&
+get_board<StmH7::StGpio, StmH7::StSysclk, StmH7::StRcc>(void)
 {
     return board;
 }
@@ -51,6 +56,6 @@ get_board<StmH7::StGpio, StmH7::StSysclk>(void)
 // Defined here so the template specialization above is already complete
 HwBoard& get_hw()
 {
-    return get_board<StmH7::StGpio, StmH7::StSysclk>();
+    return get_board<StmH7::StGpio, StmH7::StSysclk, StmH7::StRcc>();
 }
 }  // namespace EoT

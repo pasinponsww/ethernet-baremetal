@@ -4,6 +4,7 @@
 #include "board.h"
 #include "delay.h"
 #include "st_gpio.h"
+#include "st_rcc.h"
 #include "st_sysclk.h"
 
 using namespace EoT;
