@@ -1,48 +1,81 @@
 /**
 * @file st_mdio.h
-* @brief STM32H7 MDIO driver interface
+* @brief STM32H7 MDIOS driver interface
 * @author Bex Saw
 */
 
+#pragma once
+
 #include "mdio.h"
-#include "stm32h723xx.h"
 #include "reg_helpers.h"
+#include "stm32h723xx.h"
+
+#include <cstdint>
 
 namespace EoT::StmH7
 {
 
-// Define all enums 
+static constexpr uint8_t MDIO_MAX_PHY_ADDR{32U};
+static constexpr uint8_t MDIO_MAX_REG_ADDR{32U};
 
-// Struct for configuring the MDIO peripheral
-
-class StMdio : public Mdio<StMdio>
+struct StMdioParams
 {
-public: 
+    MDIOS_TypeDef* base_addr;
+    uint8_t phy_addr;
+    uint32_t timeout_cycles{10000U};
+};
 
-    explicit StMdio(/*definition*/);
+class StMdio : public EoT::Mdio<StMdio>
+{
+public:
+    explicit StMdio(const StMdioParams& params);
+
+    EoT::MdioStatus init();
 
     /**
-     * @brief Read a register from the MDIO interface
-     * @param phy_addr The PHY address
-     * @param reg_addr The register address
-     * @return true if the read was successful, false otherwise
-     */
-    bool read(uint8_t phy_addr, uint8_t reg_addr);
+    * @brief Read a register from the MDIO interface
+    * @param phy_addr The PHY address
+    * @param reg_addr The register address
+    * @param data Reference to store the read data
+    * @return MdioStatus indicating the result of the read operation
+    */
+    EoT::MdioStatus read(uint8_t phy_addr, uint8_t reg_addr, uint16_t& data);
 
     /**
-     * @brief Write a value to a register in the MDIO interface
-     * @param phy_addr The PHY address
-     * @param reg_addr The register address
-     * @param data The data to write
-     * @return true if the write was successful, false otherwise
-     */
-    bool write(uint8_t phy_addr, uint8_t reg_addr, uint16_t data);
+    * @brief Write a register to the MDIO interface
+    * @param phy_addr The PHY address
+    * @param reg_addr The register address
+    * @param data The data to write
+    * @return MdioStatus indicating the result of the write operation
+    */
+    EoT::MdioStatus write(uint8_t phy_addr, uint8_t reg_addr, uint16_t data);
 
 private:
-
     MDIOS_TypeDef* base_addr;
+    uint8_t port_addr;
+    uint32_t timeout_cycles;
 
-    // Helpers possibly
+    bool valid_phy(uint8_t phy_addr) const
+    {
+        return phy_addr < MDIO_MAX_PHY_ADDR;
+    }
 
+    bool valid_reg(uint8_t reg_addr) const
+    {
+        return reg_addr < MDIO_MAX_REG_ADDR;
+    }
+
+    /**
+    * @brief Waits for the MDIO interface to be ready for the next operation
+    * @return true if ready, false if timeout occurred
+    */
+    EoT::MdioStatus check(uint8_t phy_addr, uint8_t reg_addr) const;
+
+    /**
+    * @brief Gets the hardware status of the MDIO interface
+    * @return MdioStatus indicating the hardware status
+    */
+    EoT::MdioStatus hardware_status() const;
 };
-}
+
+}  // namespace EoT::StmH7
