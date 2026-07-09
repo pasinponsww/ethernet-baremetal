@@ -1,4 +1,5 @@
 #include "st_rcc.h"
+#include "stm32h7xx_hal.h"
 
 namespace EoT::StmH7
 {
@@ -112,9 +113,14 @@ bool StRcc::enable_crc_clock(AhbPeriph peripheral)
     }
 }
 
+bool StRcc::enable_mdio_clock()
+{
+    return enable_register_bit(base_addr->APB1HENR, 5);
+}
+
 uint32_t StRcc::get_freq() const
 {
-    return freq;
+    return HAL_RCC_GetHCLKFreq();
 }
 
 }  // namespace EoT::StmH7

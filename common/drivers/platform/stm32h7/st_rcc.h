@@ -95,11 +95,16 @@ public:
      */
     bool enable_crc_clock(AhbPeriph peripheral);
 
+    /**
+     * @brief Enable the clock for the MDIOS peripheral.
+     * @return true if the clock was enabled, false otherwise.
+     */
+    bool enable_mdio_clock();
+
     uint32_t get_freq() const;
 
 private:
     RCC_TypeDef* const base_addr;
-    uint32_t freq{0};
 };
 
 }  // namespace EoT::StmH7

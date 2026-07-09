@@ -31,6 +31,7 @@ concept MdioReq = requires(T t,
                            uint16_t data,
                            uint16_t& out)
 {
+    { t.init() } -> std::same_as<MdioStatus>;
     { t.read(phy, reg, out) } -> std::same_as<MdioStatus>;
     { t.write(phy, reg, data) } -> std::same_as<MdioStatus>;
 };
@@ -40,6 +41,14 @@ template <typename T>
 class Mdio
 {
 public:
+    /**
+    * @brief constructor which uses a static_assert as normal concept syntax doesn't work
+    */
+    Mdio()
+    {
+        static_assert(MdioReq<T> && std::derived_from<T, Mdio<T>>);
+    }
+
     /**
     * @brief Read a register from the MDIO interface
     * @param phy_addr The PHY address
@@ -75,5 +84,4 @@ private:
         return static_cast<const T&>(*this);
     }
 };
-
 }  // namespace EoT
