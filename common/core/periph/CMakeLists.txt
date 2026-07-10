@@ -1,1 +1,1 @@
-# add_subdirectory(ethernet_phy)
+# add_subdirectory(phy)

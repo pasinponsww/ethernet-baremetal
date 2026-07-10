@@ -19,8 +19,12 @@ namespace EoT::StmH7
 struct StEthMdioConfig
 {
     ETH_TypeDef* base_addr;
+    // CSR clock 
     uint32_t csr_clock_hz{0U};
     uint32_t timeout_us{1000U};
+    bool preamble_suppression_{false};
+    uint8_t trailing_clocks_{0U};
+    bool back_to_back_{false};
 };
 
 class StEthMdio : public EoT::EthMdio<StEthMdio>
