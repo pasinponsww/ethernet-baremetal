@@ -3,59 +3,44 @@
 namespace EoT::StmH7
 {
 
-StEthMdio::StEthMdio(const StEthMdioParams& params)
-    : base_addr(params.base_addr),
-      port_addr(params.phy_addr),
-      timeout_cycles(params.timeout_cycles)
+static constexpr uint8_t kMDIO_PHY_ADDR_COUNT{32U};
+static constexpr uint8_t kMDIO_REG_ADDR_COUNT{32U};
+
+static inline bool valid_phy(uint8_t phy_addr)
+{
+    return phy_addr < kMDIO_PHY_ADDR_COUNT;
+}
+
+static inline bool valid_reg(uint8_t reg_addr)
+{
+    return reg_addr < kMDIO_REG_ADDR_COUNT;
+}
+
+StEthMdio::StEthMdio(const StEthMdioConfig& config)
+    : base_addr(config.base_addr),
+      csr_clock_hz(config.csr_clock_hz),
+      timeout_us(config.timeout_us)
 {
 }
 
-EoT::MdioStatus StEthMdio::init()
+EoT::EthMdioStatus StEthMdio::init(const StEthMdioConfig& config)
 {
-    // TODO: Initialized sequence from the datasheet MDIOS_ETH SPECIFC ONLY
-    return EoT::MdioStatus::OK;
+
+    return EoT::EthMdioStatus::Ok;
 }
 
-EoT::MdioStatus StEthMdio::hardware_status() const
+EoT::EthMdioStatus StEthMdio::read(uint8_t phy_addr, uint8_t reg_addr,
+                                   uint16_t& data)
 {
-   // TODO: Check the hardware status of the ETH MDIOS peripheral and return appropriate status
-   // For now, we will assume the hardware is always OK
 
-    return EoT::MdioStatus::OK;
+    return EoT::EthMdioStatus::Ok;
 }
 
-EoT::MdioStatus StEthMdio::check(uint8_t phy_addr, uint8_t reg_addr) const
+EoT::EthMdioStatus StEthMdio::write(uint8_t phy_addr, uint8_t reg_addr,
+                                    uint16_t data)
 {
-    if (base_addr == nullptr)
-    {
-        return EoT::MdioStatus::HARDWARE_ERROR;
-    }
 
-    if (!valid_phy(phy_addr))
-    {
-        return EoT::MdioStatus::INVALID_PHY;
-    }
-
-    if (!valid_reg(reg_addr))
-    {
-        return EoT::MdioStatus::INVALID_REG;
-    }
-
-    return EoT::MdioStatus::OK;
+    return EoT::EthMdioStatus::Ok;
 }
 
-EoT::MdioStatus StEthMdio::read(uint8_t phy_addr, uint8_t reg_addr, uint16_t& data)
-{
-    // read sequences for the ETH_MDIOS SPECIFIC ONLY
-    
-    return EoT::MdioStatus::OK;
-}
-
-EoT::MdioStatus StEthMdio::write(uint8_t phy_addr, uint8_t reg_addr, uint16_t data)
-{
-    // write sequences for the ETH_MDIOS SPECIFIC ONLY
-
-    return EoT::MdioStatus::OK;
-}
-
-} // namespace EoT::StmH7
+}  // namespace EoT::StmH7
