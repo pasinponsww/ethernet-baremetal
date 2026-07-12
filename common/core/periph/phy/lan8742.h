@@ -40,21 +40,22 @@ struct PhyConfig
 };
 
 template <typename T>
-struct PhyParams
-{
-    T& mdio;
-    uint8_t phy_addr;
-} 
-
-template <typename T>
 class Lan8742
 {
 public:
 
-    Lan8742(const PhyParams<T>& params);
+    explicit Lan8742(EthMdio<T>& mdio, uint8_t phy_addr);
 
+    /**
+    * @brief Initialize the LAN8742 PHY
+    * @return true if the PHY was initialized successfully, false otherwise
+    */
     bool init();
 
+    /**
+    * @brief Reset the LAN8742 PHY
+    * @return true if the PHY was reset successfully, false otherwise
+    */
     bool reset();
 
     /**
@@ -76,24 +77,20 @@ public:
     */
     bool restart_auto_negotiation();
 
-private:
-    ETH_TypeDef* eth;
-    
-    // read_reg()
-    // - wrapper around mdio.read(phy_addr, reg, data)
-
-    // write_reg()
-    // - wrapper around mdio.write(phy_addr, reg, data)
-
-    // - set BMCR restart auto-negotiation
-
-    // current_link_state()
-    // - read LAN8742 vendor/status register
-    // - decode speed
-    // - decode duplex
-    // - decode link up/down
+    /**
+    * @brief Start auto-negotiation
+    * @return true if auto-negotiation was started successfully, false otherwise
+    */
+    bool start_auto_negotiation();
 
 private:
+
+    /**
+    * @brief Get the current link state (speed and duplex)
+    * @return true if the link is up, false otherwise
+    */
+    bool current_link_state() const;
+
     EthMdio<T>& mdio;
     uint8_t phy_addr;
 };
