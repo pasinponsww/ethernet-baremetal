@@ -46,7 +46,7 @@ EoT::EthMdioStatus StEthMdio::init()
     }
 
     // Calculate the appropriate MDC clock range based on the CSR clock frequency
-    SetReg(&(base_addr->MACMDIOAR), static_cast<uint32_t>(settings.clock_range),
+    SetReg(&(base_addr->MACMDIOAR), static_cast<uint32_t>(csr_clock_hz),
            ETH_MACMDIOAR_CR_Pos, kETH_MACMDIOAR_CR_BitWidth);
 
     // I don't have to set the clause bit if I am using Clause 22, because the default is Clause 22.
