@@ -32,11 +32,18 @@ enum class PhyDuplex : uint8_t
     Full
 };
 
-struct PhyConfig
+struct PhySettings
 {
     PhyStatus status;
     PhySpeed speed;
     PhyDuplex duplex;
+};
+
+struct PhyParams
+{
+    EthMdio<T>& mdio;
+    uint8_t phy_addr;
+    PhySettings settings;
 };
 
 template <typename T>
@@ -44,7 +51,7 @@ class Lan8742
 {
 public:
 
-    explicit Lan8742(EthMdio<T>& mdio, uint8_t phy_addr);
+    explicit Lan8742(const PhyParams& params);
 
     /**
     * @brief Initialize the LAN8742 PHY

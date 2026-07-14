@@ -2,8 +2,8 @@
 
 namespace EoT
 {
-Lan8742::Lan8742(EthMdio<T>& mdio, uint8_t phy_addr)
-    : mdio(mdio), phy_addr(phy_addr)
+Lan8742::Lan8742(const PhyParams& params)
+    : mdio(params.mdio), phy_addr(params.phy_addr), settings(params.settings)
 {
 }
 
@@ -52,7 +52,7 @@ bool Lan8742::is_link_up()
     return true; 
 }
 
-bool restart_auto_negotiation()
+bool Lan8742::restart_auto_negotiation()
 {
     // - write to BMCR register to restart auto-negotiation
     return true; 
