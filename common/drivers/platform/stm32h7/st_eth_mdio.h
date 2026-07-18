@@ -78,8 +78,8 @@ struct StEthMdioConfig
     ETH_TypeDef* base_addr;
     // CSR clock frequency (HCLK) in Hz.
     uint32_t csr_clock_hz{0U};
-    // Timeout for MDIO read/write transactions in microseconds.
-    uint32_t timeout_us{1000U};
+    // Timeout for MDIO read/write transactions in milliseconds.
+    uint32_t timeout_ms{1000U};
     StEthMdioSettings settings;
 };
 
@@ -114,7 +114,7 @@ public:
 private:
     ETH_TypeDef* base_addr;
     uint32_t csr_clock_hz{0U};
-    uint32_t timeout_us{1000U};
+    uint32_t timeout_ms{1000U};
     StEthMdioSettings settings;
 
     /**
@@ -122,12 +122,6 @@ private:
     * @return true if the MDIO interface is busy, false otherwise
     */
     bool is_busy() const;
-
-    /**
-    * @brief Get the current time in microseconds
-    * @return Current time in microseconds
-    */
-    uint32_t get_current_us() const;
 
     /**
     * @brief A wrapper for the entire busy check routine, which includes a timeout mechanism.

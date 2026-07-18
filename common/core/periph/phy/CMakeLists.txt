@@ -1,13 +1,13 @@
-add_library(phy
-    lan8742.cc
-)
+add_library(phy INTERFACE)
 
 target_include_directories(phy
-    PUBLIC
+    INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../drivers/io
 )
 
 target_link_libraries(phy
-    PUBLIC
+    INTERFACE
         io
+        driver
 )

@@ -20,7 +20,8 @@ enum class EthMdioStatus : uint8_t
     InvalidPhyAddr,
     InvalidRegAddr,
     InvalidClock,
-    BusyTimeout
+    BusyTimeout,
+    UnsupportedClause
 };
 
 // clang-format off

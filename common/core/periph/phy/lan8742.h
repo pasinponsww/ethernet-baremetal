@@ -34,11 +34,11 @@ enum class PhyDuplex : uint8_t
 
 struct PhySettings
 {
-    PhyStatus status;
     PhySpeed speed;
     PhyDuplex duplex;
 };
 
+template <typename T>
 struct PhyParams
 {
     EthMdio<T>& mdio;
@@ -50,8 +50,7 @@ template <typename T>
 class Lan8742
 {
 public:
-
-    explicit Lan8742(const PhyParams& params);
+    explicit Lan8742(PhyParams<T>& params);
 
     /**
     * @brief Initialize the LAN8742 PHY
@@ -91,15 +90,16 @@ public:
     bool start_auto_negotiation();
 
 private:
-
     /**
-    * @brief Get the current link state (speed and duplex)
-    * @return true if the link is up, false otherwise
+    * @brief Get the current link state of the PHY
+    * @param params The PHY parameters
+    * @return The current link state of the PHY
     */
-    bool current_link_state() const;
+    PhyStatus current_link_state(const PhyParams<T>& params) const;
 
     EthMdio<T>& mdio;
     uint8_t phy_addr;
+    PhySettings settings;
 };
 
 }  // namespace EoT
