@@ -13,6 +13,17 @@ void SetReg(volatile uint32_t* reg, uint32_t enum_val, uint32_t bit_num,
             uint32_t bit_length);
 
 /**
+* @brief  Sets any register with the desired bits
+* @tparam T Type of the register (e.g., uint32_t, uint16_t)
+* @param reg Reference to the register to be modified
+* @param enum_val Value to write into a bit-field
+* @param bit_num Starting bit position of bit-field
+* @param bit_length Length of bit-field
+*/
+template<typename T>
+void SetReg(T& reg, uint32_t value, uint32_t bit_num, uint32_t bit_length);
+
+/**
  * @brief Combines two bytes into a 16-bit value
  * @param msb Byte that will become the most significant bits
  * @param lsb Byte that will become the least significant bits

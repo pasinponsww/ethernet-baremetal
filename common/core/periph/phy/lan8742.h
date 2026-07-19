@@ -7,9 +7,41 @@
 
 #include <cstdint>
 #include "eth_mdio.h"
+#include "reg_helpers.h"
 
 namespace EoT
 {
+
+/**
+* @brief LAN8742 PHY register addresses
+* BCR = Basic Control Register
+* BSR = Basic Status Register
+* PHYID1 = PHY Identifier 1
+* PHYID2 = PHY Identifier 2
+* ANAR = Auto-Negotiation Advertisement Register
+* ANLPAR = Auto-Negotiation Link Partner Ability Register
+* ANER = Auto-Negotiation Expansion Register
+* ANNPTXR = Auto-Negotiation Next Page Transmit Register
+* ANNPRXR = Auto-Negotiation Next Page Receive Register
+* MMDACR = MMD Access Control Register
+* MMDAADR = MMD Access Address Data Register
+* SPECIAL_CR_REG = Special Control/Status Register
+*/
+enum class PhyReg : uint8_t
+{
+    BCR = 0,
+    BSR = 1,
+    PHYID1 = 2,
+    PHYID2 = 3,
+    ANAR = 4,
+    ANLPAR = 5,
+    ANER = 6,
+    ANNPTXR = 7,
+    ANNPRXR = 8,
+    MMDACR = 13,
+    MMDAADR = 14,
+    SPECIAL_CR_REG = 31
+};
 
 enum class PhyStatus : uint8_t
 {
@@ -88,6 +120,13 @@ public:
     * @return true if auto-negotiation was started successfully, false otherwise
     */
     bool start_auto_negotiation();
+
+    /**
+    * @brief Check if the PHY ID is valid
+    * @param id The 32-bit PHY ID
+    * @return true if the PHY ID is valid, false otherwise
+    */
+    bool is_valid_id(uint32_t id);
 
 private:
     /**
