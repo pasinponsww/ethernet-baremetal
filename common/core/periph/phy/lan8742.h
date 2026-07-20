@@ -1,13 +1,17 @@
 /**
 * @file lan8742.h
 * @brief LAN8742 PHY driver interface
+*
+* Lan8742 is a class template parameterised on the concrete MDIO backend
+* (EthMdio<T>), so its definitions must be visible at every instantiation
+* point. The implementation lives in lan8742.cc, which is included at the
+* bottom of this header rather than compiled as a standalone translation unit.
 */
 
 #pragma once
 
 #include <cstdint>
 #include "eth_mdio.h"
-#include "reg_helpers.h"
 
 namespace EoT
 {
@@ -85,60 +89,74 @@ public:
     explicit Lan8742(PhyParams<T>& params);
 
     /**
-    * @brief Initialize the LAN8742 PHY
+    * @brief Initialize the LAN8742 PHY: soft reset, verify ID, kick auto-neg.
     * @return true if the PHY was initialized successfully, false otherwise
     */
     bool init();
 
     /**
-    * @brief Reset the LAN8742 PHY
-    * @return true if the PHY was reset successfully, false otherwise
+    * @brief Soft-reset the PHY and wait for the reset bit to self-clear.
+    * @return true if the PHY reset completed, false otherwise
     */
     bool reset();
 
     /**
-    * @brief Read the PHY ID from the LAN8742 PHY
+    * @brief Read the 32-bit PHY ID (PHYID1:PHYID2).
     * @param[out] id The 32-bit PHY ID
     * @return true if the PHY ID was read successfully, false otherwise
     */
     bool read_id(uint32_t& id);
 
     /**
-    * @brief Check if the link is up
+    * @brief Check whether the link is up (BSR link-status bit).
     * @return true if the link is up, false otherwise
+    * @note BSR link-status latches low: a transient drop is held until the next
+    *       read. Read twice if you need the instantaneous state.
     */
     bool is_link_up();
 
     /**
-    * @brief Restart auto-negotiation
-    * @return true if auto-negotiation was restarted successfully, false otherwise
+    * @brief Enable and restart auto-negotiation (non-blocking).
+    * @return true if the request was written successfully, false otherwise
     */
     bool restart_auto_negotiation();
 
     /**
-    * @brief Start auto-negotiation
-    * @return true if auto-negotiation was started successfully, false otherwise
+    * @brief Enable auto-negotiation (non-blocking).
+    * @return true if the request was written successfully, false otherwise
     */
     bool start_auto_negotiation();
 
     /**
-    * @brief Check if the PHY ID is valid
+    * @brief Check whether auto-negotiation has completed (BSR bit 5).
+    * @return true if auto-negotiation completed, false otherwise
+    */
+    bool is_auto_negotiation_done();
+
+    /**
+    * @brief Check whether a 32-bit PHY ID matches the LAN8742 (revision masked).
     * @param id The 32-bit PHY ID
     * @return true if the PHY ID is valid, false otherwise
     */
-    bool is_valid_id(uint32_t id);
+    bool is_valid_id(uint32_t id) const;
+
+    /**
+    * @brief Decode the negotiated speed/duplex from the vendor Special
+    *        Control/Status register (reg 31).
+    * @param[out] out Filled with the current speed and duplex on success.
+    * @return PhyStatus::Ok on success, PhyStatus::LinkDown if no link,
+    *         PhyStatus::MdioError on a bus error.
+    */
+    PhyStatus current_link_state(PhySettings& out) const;
 
 private:
-    /**
-    * @brief Get the current link state of the PHY
-    * @param params The PHY parameters
-    * @return The current link state of the PHY
-    */
-    PhyStatus current_link_state(const PhyParams<T>& params) const;
-
     EthMdio<T>& mdio;
     uint8_t phy_addr;
     PhySettings settings;
 };
 
 }  // namespace EoT
+
+// Template implementation. Included (not separately compiled) so the
+// definitions are visible wherever Lan8742<T> is instantiated.
+#include "lan8742.cc"

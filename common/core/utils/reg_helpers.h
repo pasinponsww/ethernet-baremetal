@@ -20,7 +20,7 @@ void SetReg(volatile uint32_t* reg, uint32_t enum_val, uint32_t bit_num,
 * @param bit_num Starting bit position of bit-field
 * @param bit_length Length of bit-field
 */
-template<typename T>
+template <typename T>
 void SetReg(T& reg, uint32_t value, uint32_t bit_num, uint32_t bit_length);
 
 /**

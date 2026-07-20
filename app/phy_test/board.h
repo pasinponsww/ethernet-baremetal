@@ -1,12 +1,12 @@
 #pragma once
 #include "eth_mdio.h"
 #include "gpio.h"
+#include "lan8742.h"
 #include "st_eth_mdio.h"
 #include "st_gpio.h"
 #include "st_rcc.h"
 #include "st_usart.h"
 #include "usart.h"
-#include "lan8742.h"
 
 namespace EoT
 {

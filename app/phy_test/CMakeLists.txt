@@ -4,7 +4,7 @@ set(LDF ${CMAKE_CURRENT_BINARY_DIR}/${EXECUTABLE}.ld)
 
 add_subdirectory_for(STM32H723 bsp_h723)
 
-if (TARGET mdio_bsp)
+if (TARGET phy_bsp)
 
     add_executable_for(${TARGET_DEVICE} ${EXECUTABLE} ${LDF}
         main.cc

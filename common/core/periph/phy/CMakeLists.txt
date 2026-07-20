@@ -8,6 +8,5 @@ target_include_directories(phy
 
 target_link_libraries(phy
     INTERFACE
-        io
         driver
 )
