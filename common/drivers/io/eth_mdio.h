@@ -20,7 +20,8 @@ enum class EthMdioStatus : uint8_t
     InvalidPhyAddr,
     InvalidRegAddr,
     InvalidClock,
-    BusyTimeout
+    BusyTimeout,
+    UnsupportedClause
 };
 
 // clang-format off
@@ -46,7 +47,7 @@ public:
     */
     EthMdio()
     {
-        static_assert(EthMdioReq<T>);
+        static_assert(EthMdioReq<T> && std::derived_from<T, EthMdio>);
     }
 
     /**
