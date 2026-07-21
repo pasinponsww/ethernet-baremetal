@@ -24,7 +24,7 @@ namespace
 
 // Send a compile-time string literal (without the trailing NUL).
 template <size_t N>
-constexpr auto bytes(const char (&str)[N])
+consteval auto bytes(const char (&str)[N])
 {
     std::array<uint8_t, N - 1> out{};
     for (size_t i = 0; i < N - 1; ++i) out[i] = static_cast<uint8_t>(str[i]);
