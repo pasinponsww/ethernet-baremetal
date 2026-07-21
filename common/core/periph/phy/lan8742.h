@@ -149,6 +149,32 @@ public:
     */
     PhyStatus current_link_state(PhySettings& out) const;
 
+    /**
+    * @brief Enable or disable internal digital loopback (BCR bit 14).
+    *
+    * Loops TX back to RX inside the PHY, ahead of the line driver, so a MAC
+    * can be exercised without a cable or link partner. Auto-negotiation
+    * state is left untouched; call force_link_settings() first if you need
+    * a specific fixed speed/duplex while looped back, since a real link
+    * partner isn't present to negotiate with.
+    * @param enable true to enable loopback, false to return to normal operation
+    * @return true if the request was written successfully, false otherwise
+    * @note While loopback is enabled, is_link_up()/current_link_state() no
+    *       longer reflect a real link and should not be relied on.
+    */
+    bool set_loopback(bool enable);
+
+    /**
+    * @brief Force a fixed speed/duplex, bypassing auto-negotiation.
+    *
+    * Disables auto-negotiation (BCR bit 12) and sets the speed-select (BCR
+    * bit 13) and duplex-mode (BCR bit 8) bits from the PhySettings supplied
+    * at construction. Useful for loopback testing or a fixed MAC-to-MAC
+    * link where there is no negotiation partner.
+    * @return true if the request was written successfully, false otherwise
+    */
+    bool force_link_settings();
+
 private:
     EthMdio<T>& mdio;
     uint8_t phy_addr;

@@ -12,8 +12,11 @@ static constexpr uint32_t kMaxPolls{1000U};
 
 // BCR (reg 0) bit positions
 static constexpr uint32_t kBcrSoftReset{15U};
+static constexpr uint32_t kBcrLoopback{14U};
+static constexpr uint32_t kBcrSpeedSelect{13U};
 static constexpr uint32_t kBcrAutoNegEnable{12U};
 static constexpr uint32_t kBcrAutoNegRestart{9U};
+static constexpr uint32_t kBcrDuplexMode{8U};
 
 // BSR (reg 1) bit positions
 static constexpr uint32_t kBsrLinkUp{2U};
@@ -42,8 +45,9 @@ bool Lan8742<T>::init()
         return false;
     }
 
-    // Read the PHY ID
-    if (!read_id(id))
+    // Read the PHY ID and confirm it's actually a LAN8742 before proceeding --
+    // a wrong MDIO address or bad wiring can still return Ok with junk data.
+    if (!read_id(id) || !is_valid_id(id))
     {
         return false;
     }
@@ -238,6 +242,51 @@ PhyStatus Lan8742<T>::current_link_state(PhySettings& out) const
     out.duplex = (field & kScsrDuplexFull) ? PhyDuplex::Full : PhyDuplex::Half;
 
     return PhyStatus::Ok;
+}
+
+template <typename T>
+bool Lan8742<T>::set_loopback(bool enable)
+{
+    uint16_t bcr = 0;
+
+    // Read the current BMCR value
+    if (mdio.read(phy_addr, static_cast<uint8_t>(PhyReg::BCR), bcr) !=
+        EthMdioStatus::Ok)
+    {
+        return false;
+    }
+
+    // Set or clear the loopback bit
+    SetReg(bcr, enable ? 1U : 0U, kBcrLoopback, 1U);
+
+    // Write the modified BMCR value back to the PHY
+    return mdio.write(phy_addr, static_cast<uint8_t>(PhyReg::BCR), bcr) ==
+           EthMdioStatus::Ok;
+}
+
+template <typename T>
+bool Lan8742<T>::force_link_settings()
+{
+    uint16_t bcr = 0;
+
+    // Read the current BMCR value
+    if (mdio.read(phy_addr, static_cast<uint8_t>(PhyReg::BCR), bcr) !=
+        EthMdioStatus::Ok)
+    {
+        return false;
+    }
+
+    // Disable auto-negotiation so the forced speed/duplex bits take effect,
+    // then apply the speed/duplex requested at construction.
+    SetReg(bcr, 0U, kBcrAutoNegEnable, 1U);
+    SetReg(bcr, settings.speed == PhySpeed::Speed100M ? 1U : 0U,
+           kBcrSpeedSelect, 1U);
+    SetReg(bcr, settings.duplex == PhyDuplex::Full ? 1U : 0U, kBcrDuplexMode,
+           1U);
+
+    // Write the modified BMCR value back to the PHY
+    return mdio.write(phy_addr, static_cast<uint8_t>(PhyReg::BCR), bcr) ==
+           EthMdioStatus::Ok;
 }
 
 }  // namespace EoT
