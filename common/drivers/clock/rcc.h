@@ -8,12 +8,24 @@ namespace EoT::StmH7
 
 template <typename T>
 concept RccReq = requires(const T& t) {
-    { t.enable_eth_clock(EthernetClock::Mac) } -> std::same_as<bool>;
-    { t.enable_gpio_clock(GpioPort::A) } -> std::same_as<bool>;
-    { t.enable_uart_clock(UartId::U1) } -> std::same_as<bool>;
-    { t.enable_dma_clock(DmaId::D1) } -> std::same_as<bool>;
-    { t.enable_crc_clock(AhbPeriph::Crc) } -> std::same_as<bool>;
-    { t.get_freq() } -> std::same_as<uint32_t>;
+    {
+        t.enable_eth_clock(EthernetClock::Mac)
+    } -> std::same_as<bool>;
+    {
+        t.enable_gpio_clock(GpioPort::A)
+    } -> std::same_as<bool>;
+    {
+        t.enable_uart_clock(UartId::U1)
+    } -> std::same_as<bool>;
+    {
+        t.enable_dma_clock(DmaId::D1)
+    } -> std::same_as<bool>;
+    {
+        t.enable_crc_clock(AhbPeriph::Crc)
+    } -> std::same_as<bool>;
+    {
+        t.get_freq()
+    } -> std::same_as<uint32_t>;
 };
 
 template <typename T>
