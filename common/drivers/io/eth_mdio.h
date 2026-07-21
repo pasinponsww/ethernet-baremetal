@@ -47,7 +47,7 @@ public:
     */
     EthMdio()
     {
-        static_assert(EthMdioReq<T>);
+        static_assert(EthMdioReq<T> && std::derived_from<T, EthMdio>);
     }
 
     /**
