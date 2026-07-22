@@ -1,9 +1,8 @@
 /**
-* @brief MAC Layer for STM32H7
-* @author Bex Saw
-* @date 7/20/2026
-* @note This is the MAC Layer for ETHERNET on STM32H7. It provides an interface for 
-*       initializing and configuring the MAC, as well as sending and receiving Ethernet frames.
+*  @file st_eth_mac.h
+*  @brief MAC Layer for STM32H7
+*  @author Bex Saw
+*  @date 7/20/2026
 */
 
 #pragma once
@@ -11,28 +10,64 @@
 #include <array>
 #include "lan8742.h"
 #include "eth_mac.h"
+#include "stm32h723xx.h"
 
 namespace EoT
 {
 namespace StmH7
 {
 
-// Define enums for MAC configuration settings
-
-// Definition of all MAC specific stuff here 
-
+/**
+* @brief Settings for the STM32H7 MAC Layer
+* @param speed Link speed
+* @param duplex Link duplex mode
+* @param loopback Loopback mode
+* @param mac_address 6-byte MAC address
+* @param filter Receive filter configuration
+* @param flow_control Flow control configuration
+* @param max_frame_size Giant Packet Size Limit (MACECR.GPSL), 0 to leave the
+*        default (standard 1518/1522-byte) limit in place
+*/
 struct StEthMacSettings
 {
     PhySpeed speed;
     PhyDuplex duplex;
     bool loopback;
     std::array<uint8_t, 6> mac_address;
+    ReceiveFilterConfig filter;
+    FlowControlConfig flow_control;
+    uint32_t max_frame_size{0U};
 };
 
+/**
+* @brief Static/global VLAN tag configuration (MACVIR/MACIVIR/MACVTR).
+*        Per-packet override is a DMA TX descriptor concern, not this.
+*/
+struct VlanConfig
+{
+    bool insert_tag{false};
+    uint16_t vlan_id{0U};   // 12-bit VLAN identifier
+    uint8_t priority{0U};   // 3-bit 802.1p priority
+};
+
+/**
+* @brief Wake-on-LAN configuration (MACPCSR, MACRWKPFR)
+*/
+struct WakeOnLanConfig
+{
+    bool magic_packet{true};
+    bool remote_wakeup{false};
+};
+
+/**
+* @brief Parameters for the STM32H7 MAC Layer
+* @param settings MAC settings
+* @param base_addr Base address of the ETH peripheral
+*/
 struct StEthMacParams
 {
     StEthMacSettings settings;
-    ETH_TypeDef* base_addr; 
+    ETH_TypeDef* base_addr;
 };
 
 class StEthMac : public Mac<StEthMac>
@@ -63,11 +98,18 @@ public:
     bool apply_link_settings(PhySpeed speed, PhyDuplex duplex);
 
     /**
-    * @brief Enable or disable the MAC
+    * @brief Enable or disable the MAC transmitter (MACCR.TE)
     * @param on true to enable, false to disable
     * @return true if the operation was successful, false otherwise
     */
-    bool enable(bool on);
+    bool enable_tx(bool on);
+
+    /**
+    * @brief Enable or disable the MAC receiver (MACCR.RE)
+    * @param on true to enable, false to disable
+    * @return true if the operation was successful, false otherwise
+    */
+    bool enable_rx(bool on);
 
     /**
     * @brief Set the loopback mode
@@ -76,8 +118,118 @@ public:
     */
     bool set_loopback(bool on);
 
+    /**
+    * @brief Configure destination-address receive filtering (MACPFR)
+    * @param config Receive filter configuration
+    * @return true if the filter was configured successfully, false otherwise
+    */
+    bool set_receive_filter(const ReceiveFilterConfig& config);
+
+    /**
+    * @brief Enable or disable IP/TCP/UDP checksum offload (MACCR.IPC)
+    * @param on true to enable, false to disable
+    * @return true if the operation was successful, false otherwise
+    */
+    bool set_checksum_offload(bool on);
+
+    /**
+    * @brief Configure 802.3x flow control / pause frames
+    *        (MACTFCR.TFE/PT, MACRFCR.RFE)
+    * @param config Flow control configuration
+    * @return true if the operation was successful, false otherwise
+    */
+    bool set_flow_control(const FlowControlConfig& config);
+
+    /**
+    * @brief Set the Giant Packet Size Limit (MACECR.GPSL, MACCR.GPSLCE)
+    * @param frame_size Max frame size in bytes, must fit in 14 bits (<= 0x3FFF)
+    * @return true on success, false if frame_size doesn't fit or on error
+    */
+    bool set_max_frame_size(uint32_t frame_size);
+
+    /**
+    * @brief Whether the MAC transmitter is currently enabled (reads
+    *        MACCR.TE directly, not shadow state)
+    */
+    bool is_transmitter_enabled() const;
+
+    /**
+    * @brief Whether the MAC receiver is currently enabled (reads MACCR.RE
+    *        directly, not shadow state)
+    */
+    bool is_receiver_enabled() const;
+
+    /**
+    * @brief Whether the MAC's own loopback mode is currently enabled
+    */
+    bool is_loopback_enabled() const;
+
+    /**
+    * @note VLAN, EEE, Wake-on-LAN, and PTP timestamping are feature that 
+    *      are introduce for ETHERNET MAC in H7.
+    * What it is?
+    *   - VLAN - Virtual Local Area Network (allow us to create multiple virtual networks on a single physical network)
+    *   - EEE - Energy Efficient Ethernet (reduce power consumption during periods of low data activity)
+    *   - Wake-on-LAN - allows a computer to be turned on or awakened by a network message
+    *   - PTP - Precision Time Protocol (synchronize clocks throughout a computer network)
+    */
+
+    // We have setter/getter and this is handle in init() baked into the settings. 
+
+    /**
+    * @brief Configure static/global VLAN tag insertion and detection
+    *        (MACVIR, MACIVIR, MACVTR)
+    * @param config VLAN configuration
+    * @return true if the operation was successful, false otherwise
+    */
+    bool set_vlan_config(const VlanConfig& config);
+
+    /**
+    * @brief Enable or disable IEEE 802.3az Energy Efficient Ethernet (LPI)
+    *        (MACLCSR, MACLTCR, MACLETR, MAC1USTCR)
+    * @param on true to enable, false to disable
+    * @return true if the operation was successful, false otherwise
+    */
+    bool enable_eee(bool on);
+
+    /**
+    * @brief Configure Wake-on-LAN (Magic Packet / remote wakeup detection)
+    *        (MACPCSR, MACRWKPFR)
+    * @param config Wake-on-LAN configuration
+    * @return true if the operation was successful, false otherwise
+    */
+    bool set_wake_on_lan(const WakeOnLanConfig& config);
+
+    /**
+    * @brief Enable or disable IEEE 1588/PTPv2 hardware timestamping
+    *        (MACTSCR). Per-packet timestamp readback is a DMA descriptor
+    *        concern, not this.
+    * @param on true to enable, false to disable
+    * @return true if the operation was successful, false otherwise
+    */
+    bool enable_ptp_timestamping(bool on);
+
+        /**
+    * @brief Get the current EEE configuration (shadow state)
+    * @return The current EEE configuration
+    */
+    EeeConfig get_eee_config() const;
+
+    /**
+    * @brief Get the current Wake-on-LAN configuration (shadow state)
+    * @return The current Wake-on-LAN configuration
+    */
+    WakeOnLanConfig get_wake_on_lan_config() const;
+
+    /**
+    * @brief Get the current PTP timestamping configuration (shadow state)
+    * @return The current PTP timestamping configuration
+    */
+    PtpTimestampingConfig get_ptp_timestamping_config() const;
+
+
 private:
-    ETH_TypeDef* base_addr;  
+    ETH_TypeDef* base_addr;
     StEthMacSettings settings;
 };
 }
