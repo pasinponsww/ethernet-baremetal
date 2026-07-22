@@ -4,29 +4,7 @@
 namespace EoT
 {
 
-// LAN8742 PHY identifier. PHYID1 = 0x0007, PHYID2 = 0xC13x (low nibble is the
-// silicon revision, masked out when comparing).
-static constexpr uint32_t kPhyId{0x0007C130};
-static constexpr uint32_t kPhyIdMask{0xFFFFFFF0};
 static constexpr uint32_t kMaxPolls{1000U};
-
-// BCR (reg 0) bit positions
-static constexpr uint32_t kBcrSoftReset{15U};
-static constexpr uint32_t kBcrLoopback{14U};
-static constexpr uint32_t kBcrSpeedSelect{13U};
-static constexpr uint32_t kBcrAutoNegEnable{12U};
-static constexpr uint32_t kBcrAutoNegRestart{9U};
-static constexpr uint32_t kBcrDuplexMode{8U};
-
-// BSR (reg 1) bit positions
-static constexpr uint32_t kBsrLinkUp{2U};
-static constexpr uint32_t kBsrAutoNegComplete{5U};
-
-// Special Control/Status (reg 31) speed-indication field [4:2]
-static constexpr uint32_t kScsrSpeedPos{2U};
-static constexpr uint32_t kScsrSpeedMask{0x7U};
-static constexpr uint32_t kScsrSpeed100{0x2U};    // bit set => 100M else 10M
-static constexpr uint32_t kScsrDuplexFull{0x4U};  // bit set => full duplex
 
 template <typename T>
 Lan8742<T>::Lan8742(PhyParams<T>& params)
@@ -71,7 +49,7 @@ bool Lan8742<T>::reset()
     }
 
     // Set the soft reset bit
-    SetReg(bmcr, 1U, kBcrSoftReset, 1U);
+    SetReg(bmcr, 1U, static_cast<uint32_t>(BcrBit::Reset), 1U);
 
     // Write the modified BMCR value back to the PHY
     if (mdio.write(phy_addr, static_cast<uint8_t>(PhyReg::BCR), bmcr) !=
@@ -91,7 +69,7 @@ bool Lan8742<T>::reset()
         }
 
         // Check if the soft-reset bit is cleared
-        if ((bmcr & (1U << kBcrSoftReset)) == 0U)
+        if ((bmcr & (1U << static_cast<uint32_t>(BcrBit::Reset))) == 0U)
         {
             return true;
         }
@@ -138,7 +116,7 @@ bool Lan8742<T>::is_link_up()
     }
 
     // Check the link status bit in the BSR. If the bit is set, the link is up; otherwise, it is down.
-    return (bsr & (1U << kBsrLinkUp)) != 0U;
+    return (bsr & (1U << static_cast<uint32_t>(BsrBit::LinkUp))) != 0U;
 }
 
 template <typename T>
@@ -154,8 +132,8 @@ bool Lan8742<T>::restart_auto_negotiation()
     }
 
     // Set the Auto-Negotiation Enable and Restart bits in the BCR to initiate auto-negotiation
-    SetReg(bcr, 1U, kBcrAutoNegEnable, 1U);
-    SetReg(bcr, 1U, kBcrAutoNegRestart, 1U);
+    SetReg(bcr, 1U, static_cast<uint32_t>(BcrBit::AutoNegEnable), 1U);
+    SetReg(bcr, 1U, static_cast<uint32_t>(BcrBit::AutoNegRestart), 1U);
 
     return mdio.write(phy_addr, static_cast<uint8_t>(PhyReg::BCR), bcr) ==
            EthMdioStatus::Ok;
@@ -174,7 +152,7 @@ bool Lan8742<T>::start_auto_negotiation()
     }
 
     // Set the Auto-Negotiation Enable bit in the BCR to enable auto-negotiation
-    SetReg(bcr, 1U, kBcrAutoNegEnable, 1U);
+    SetReg(bcr, 1U, static_cast<uint32_t>(BcrBit::AutoNegEnable), 1U);
 
     // Write the modified BCR value back to the PHY to start auto-negotiation
     return mdio.write(phy_addr, static_cast<uint8_t>(PhyReg::BCR), bcr) ==
@@ -195,13 +173,13 @@ bool Lan8742<T>::is_auto_negotiation_done()
 
     // Check the auto-negotiation complete bit in the BSR. If the bit is set,
     // auto-negotiation has completed; otherwise, it is still in progress.
-    return (bsr & (1U << kBsrAutoNegComplete)) != 0U;
+    return (bsr & (1U << static_cast<uint32_t>(BsrBit::AutoNegDone))) != 0U;
 }
 
 template <typename T>
 bool Lan8742<T>::is_valid_id(uint32_t id) const
 {
-    return (id & kPhyIdMask) == (kPhyId & kPhyIdMask);
+    return (id & kLan8742IdMask) == (kLan8742Id & kLan8742IdMask);
 }
 
 template <typename T>
@@ -218,7 +196,7 @@ PhyStatus Lan8742<T>::current_link_state(PhySettings& out) const
 
     // Check if the link is up by examining the link status bit in the BSR.
     // If the bit is not set, return LinkDown status.
-    if ((bsr & (1U << kBsrLinkUp)) == 0U)
+    if ((bsr & (1U << static_cast<uint32_t>(BsrBit::LinkUp))) == 0U)
     {
         return PhyStatus::LinkDown;
     }
@@ -233,13 +211,18 @@ PhyStatus Lan8742<T>::current_link_state(PhySettings& out) const
         return PhyStatus::MdioError;
     }
 
-    const uint32_t field = (scsr >> kScsrSpeedPos) & kScsrSpeedMask;
-
-    // Decode the speed and duplex settings from the SCSR field and
+    // Decode the speed and duplex settings from the SCSR mode field and
     // populate the output structure accordingly.
+    const auto mode = static_cast<ScsrMode>(scsr & kScsrModeMask);
+
     out.speed =
-        (field & kScsrSpeed100) ? PhySpeed::Speed100M : PhySpeed::Speed10M;
-    out.duplex = (field & kScsrDuplexFull) ? PhyDuplex::Full : PhyDuplex::Half;
+        (mode == ScsrMode::Speed100Half || mode == ScsrMode::Speed100Full)
+            ? PhySpeed::Speed100M
+            : PhySpeed::Speed10M;
+    out.duplex =
+        (mode == ScsrMode::Speed10Full || mode == ScsrMode::Speed100Full)
+            ? PhyDuplex::Full
+            : PhyDuplex::Half;
 
     return PhyStatus::Ok;
 }
@@ -257,7 +240,7 @@ bool Lan8742<T>::set_loopback(bool enable)
     }
 
     // Set or clear the loopback bit
-    SetReg(bcr, enable ? 1U : 0U, kBcrLoopback, 1U);
+    SetReg(bcr, enable ? 1U : 0U, static_cast<uint32_t>(BcrBit::Loopback), 1U);
 
     // Write the modified BMCR value back to the PHY
     return mdio.write(phy_addr, static_cast<uint8_t>(PhyReg::BCR), bcr) ==
@@ -278,11 +261,11 @@ bool Lan8742<T>::force_link_settings()
 
     // Disable auto-negotiation so the forced speed/duplex bits take effect,
     // then apply the speed/duplex requested at construction.
-    SetReg(bcr, 0U, kBcrAutoNegEnable, 1U);
+    SetReg(bcr, 0U, static_cast<uint32_t>(BcrBit::AutoNegEnable), 1U);
     SetReg(bcr, settings.speed == PhySpeed::Speed100M ? 1U : 0U,
-           kBcrSpeedSelect, 1U);
-    SetReg(bcr, settings.duplex == PhyDuplex::Full ? 1U : 0U, kBcrDuplexMode,
-           1U);
+           static_cast<uint32_t>(BcrBit::Speed100), 1U);
+    SetReg(bcr, settings.duplex == PhyDuplex::Full ? 1U : 0U,
+           static_cast<uint32_t>(BcrBit::Duplex), 1U);
 
     // Write the modified BMCR value back to the PHY
     return mdio.write(phy_addr, static_cast<uint8_t>(PhyReg::BCR), bcr) ==

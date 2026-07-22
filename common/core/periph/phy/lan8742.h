@@ -47,6 +47,47 @@ enum class PhyReg : uint8_t
     SPECIAL_CR_REG = 31
 };
 
+/**
+* @brief BCR (Basic Control Register) bit positions.
+* Pairs with SetReg(reg, val, bit, len).
+*/
+enum class BcrBit : uint32_t
+{
+    Reset = 15,
+    Loopback = 14,
+    Speed100 = 13,
+    AutoNegEnable = 12,
+    AutoNegRestart = 9,
+    Duplex = 8
+};
+
+/**
+* @brief BSR (Basic Status Register) bit positions.
+*/
+enum class BsrBit : uint32_t
+{
+    AutoNegDone = 5,
+    LinkUp = 2
+};
+
+/**
+* @brief Special Control/Status Register speed/duplex field (bits [4:2]).
+* Mask the raw register value with kScsrModeMask, then compare against these.
+*/
+enum class ScsrMode : uint16_t
+{
+    Speed10Half = 0x0004,
+    Speed100Half = 0x0008,
+    Speed10Full = 0x0014,
+    Speed100Full = 0x0018
+};
+constexpr uint16_t kScsrModeMask = 0x001CU;
+
+// PHY ID for a LAN8742 (PHYID1:PHYID2). Low nibble is silicon revision,
+// masked out when comparing.
+constexpr uint32_t kLan8742Id = 0x0007C130U;
+constexpr uint32_t kLan8742IdMask = 0xFFFFFFF0U;
+
 enum class PhyStatus : uint8_t
 {
     Ok = 0,
