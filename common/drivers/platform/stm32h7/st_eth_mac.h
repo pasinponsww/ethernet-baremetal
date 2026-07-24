@@ -60,6 +60,36 @@ struct WakeOnLanConfig
 };
 
 /**
+* @brief Energy Efficient Ethernet (EEE) configuration (MACCSR, MACLPIR)
+*        This structure holds the configuration for the Energy Efficient Ethernet feature.
+*        tx_lpi_entry_timer: The time in microseconds before the MAC enters Low Power Idle (LPI) mode after the last frame transmission.
+*        tx_lpi_timer: The time in microseconds that the MAC remains in LPI mode before resuming normal operation.
+*        rx_lpi_timer: The time in microseconds that the MAC remains in LPI mode before resuming normal operation after receiving a frame.
+*/
+struct EEEConfig
+{
+    bool enabled{false};
+    uint16_t tx_lpi_entry_timer{0U};
+    uint16_t tx_lpi_timer{0U};
+    uint16_t rx_lpi_timer{0U};
+};
+
+/**
+* @brief PTP timestamping configuration (MACTSCR)
+* enable: Whether PTP timestamping is enabled or disabled.
+* one_step: Whether one-step timestamping is enabled or disabled.
+* sub_second_increment: Whether sub-second increment is enabled or disabled.
+* sub_second_increment_value: The value to be used for sub-second increment, if enabled.
+*/
+struct PtpTimestampingConfig
+{
+    bool enabled{false};
+    bool one_step{false};
+    bool sub_second_increment{false};
+    uint32_t sub_second_increment_value{0U};
+};
+
+/**
 * @brief Parameters for the STM32H7 MAC Layer
 * @param settings MAC settings
 * @param base_addr Base address of the ETH peripheral
@@ -213,7 +243,7 @@ public:
     * @brief Get the current EEE configuration (shadow state)
     * @return The current EEE configuration
     */
-    EeeConfig get_eee_config() const;
+    EEEConfig get_eee_config() const;
 
     /**
     * @brief Get the current Wake-on-LAN configuration (shadow state)
