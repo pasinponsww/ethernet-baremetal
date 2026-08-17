@@ -71,7 +71,6 @@ template <typename T>
 class Mac
 {
 public:
-
     /**
     * @brief constructor which uses a static_assert as normal concept syntax doesn't work
     */
@@ -144,7 +143,6 @@ public:
 
         return self().enable_rx(false);
     }
-
 
     /*                                                                */
     /*                      Setter Functions                          */
@@ -262,4 +260,4 @@ private:
     }
 };
 
-} // namespace EoT
+}  // namespace EoT

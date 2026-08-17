@@ -6,10 +6,10 @@
 */
 
 #pragma once
-#include <cstdint>
 #include <array>
-#include "lan8742.h"
+#include <cstdint>
 #include "eth_mac.h"
+#include "lan8742.h"
 #include "stm32h723xx.h"
 
 namespace EoT
@@ -46,8 +46,8 @@ struct StEthMacSettings
 struct VlanConfig
 {
     bool insert_tag{false};
-    uint16_t vlan_id{0U};   // 12-bit VLAN identifier
-    uint8_t priority{0U};   // 3-bit 802.1p priority
+    uint16_t vlan_id{0U};  // 12-bit VLAN identifier
+    uint8_t priority{0U};  // 3-bit 802.1p priority
 };
 
 /**
@@ -103,7 +103,6 @@ struct StEthMacParams
 class StEthMac : public Mac<StEthMac>
 {
 public:
-
     explicit StEthMac(const StEthMacParams& params);
 
     /**
@@ -204,7 +203,7 @@ public:
     *   - PTP - Precision Time Protocol (synchronize clocks throughout a computer network)
     */
 
-    // We have setter/getter and this is handle in init() baked into the settings. 
+    // We have setter/getter and this is handle in init() baked into the settings.
 
     /**
     * @brief Configure static/global VLAN tag insertion and detection
@@ -239,7 +238,7 @@ public:
     */
     bool enable_ptp_timestamping(bool on);
 
-        /**
+    /**
     * @brief Get the current EEE configuration (shadow state)
     * @return The current EEE configuration
     */
@@ -257,10 +256,12 @@ public:
     */
     PtpTimestampingConfig get_ptp_timestamping_config() const;
 
-
 private:
     ETH_TypeDef* base_addr;
     StEthMacSettings settings;
+    // No HW shadow for WOL: MACPCSR bits are read back directly, same as TE/RE.
+    EEEConfig eee_state_{};
+    PtpTimestampingConfig ptp_state_{};
 };
-}
-}
+}  // namespace StmH7
+}  // namespace EoT
