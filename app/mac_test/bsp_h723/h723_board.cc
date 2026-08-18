@@ -94,9 +94,9 @@ bool board_init()
 
 template <>
 Board<StmH7::StEthMac, StmH7::StGpio, StmH7::StRcc, StmH7::StSysclk,
-     StmH7::StUsart>&
+      StmH7::StUsart>&
 get_board<StmH7::StEthMac, StmH7::StGpio, StmH7::StRcc, StmH7::StSysclk,
-         StmH7::StUsart>()
+          StmH7::StUsart>()
 {
     return StmH7::board;
 }

@@ -13,7 +13,7 @@ namespace EoT
 {
 
 template <typename TMac, typename TGpio, typename TRcc, typename TSysclk,
-         typename TUsart>
+          typename TUsart>
 struct Board
 {
     Mac<TMac>& mac;
@@ -27,7 +27,7 @@ struct Board
 bool board_init();
 
 template <typename TMac, typename TGpio, typename TRcc, typename TSysclk,
-         typename TUsart>
+          typename TUsart>
 Board<TMac, TGpio, TRcc, TSysclk, TUsart>& get_board();
 
 using HwBoard = Board<StmH7::StEthMac, StmH7::StGpio, StmH7::StRcc,

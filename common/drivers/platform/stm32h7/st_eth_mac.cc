@@ -211,7 +211,8 @@ bool StEthMac::set_flow_control(const FlowControlConfig& config)
     SetReg(&base_addr->MACTFCR, config.tx_pause ? 1U : 0U, ETH_MACTFCR_TFE_Pos,
            1U);
     SetReg(&base_addr->MACTFCR, config.pause_time, ETH_MACTFCR_PT_Pos, 16U);
-    SetReg(&base_addr->MACRFCR, config.rx_pause ? 1U : 0U, ETH_MACRFCR_RFE_Pos, 1U);
+    SetReg(&base_addr->MACRFCR, config.rx_pause ? 1U : 0U, ETH_MACRFCR_RFE_Pos,
+           1U);
 
     settings.flow_control = config;
     return true;
@@ -328,7 +329,7 @@ bool StEthMac::set_wake_on_lan(const WakeOnLanConfig& config)
     }
 
     // This is define in the MACPCSR register, but the MACRWKPFR register is read-only and
-    // only indicates whether a WOL event has occurred. The MACPCSR bits are read back directly, 
+    // only indicates whether a WOL event has occurred. The MACPCSR bits are read back directly,
     // so we don't need to maintain shadow state for them.
     SetReg(&base_addr->MACPCSR, config.magic_packet ? 1U : 0U,
            ETH_MACPCSR_MGKPKTEN_Pos, 1U);
