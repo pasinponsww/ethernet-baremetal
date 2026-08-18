@@ -22,6 +22,9 @@
 
 using namespace EoT;
 
+// This test is responsible for testing the MAC process
+// ST_MAC_ETHERNET dealing with the MAC registers, but not the DMA or frame processing.
+
 namespace
 {
 
