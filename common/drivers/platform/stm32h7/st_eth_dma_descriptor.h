@@ -48,10 +48,6 @@ namespace EoT::StmH7
 #define ETH_RDES3_BUF1V         (0x1UL << ETH_RDES3_BUF1V_Pos)      /* Buffer 1 Address Valid */
 // clang-format on
 
-
-
-
-
 /** 
 * Ethernet DMA Descriptor- must be word aligned
 * Descriptors generally consist of 4 registers
@@ -86,19 +82,19 @@ struct alignas(32) DmaDescriptor
 */
 class TxDmaDescriptor
 {
-    public:
+public:
     DmaDescriptor descriptor;
     bool set_buffer_1(uint32_t addr, uint16_t length)
     {
         descriptor.des0 = addr;
         uint32_t byte_length = (static_cast<uint32_t>(length) & 0x00003FFF);
-        SetReg(&descriptor.des2, byte_length, 13,  14);
+        SetReg(&descriptor.des2, byte_length, 13, 14);
     }
     bool set_buffer_2(uint32_t addr, uint16_t length)
     {
         descriptor.des1 = addr;
         uint32_t byte_length = (static_cast<uint32_t>(length) & 0x00003FFF);
-        SetReg(&descriptor.des2, byte_length, 16,  14);
+        SetReg(&descriptor.des2, byte_length, 16, 14);
     }
 
     void set_owned_by_dma()
@@ -123,10 +119,8 @@ class TxDescriptorManager
         __attribute__((section(".sram1_data")));
 
 public:
-    
     static_assert(N > 0, "Ring must have at least one descriptor");
 };
-
 
 /*
   DMA Rx Normal Descriptor read format

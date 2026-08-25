@@ -5,9 +5,14 @@
 namespace EoT::StmH7
 {
 
-StEthDma::StEthDma(StEthDmaSettings& config) : params(config)
+<<<<<<< HEAD
+StEthDma::StEthDma(StEthDmaSettings& config)
+    : params(config){} == == ==
+    = StEthDma::StEthDma(StEthDmaSettings & config) : params(config)
 {
 }
+
+>>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
 
 bool StEthDma::init()
 {
@@ -30,10 +35,15 @@ bool StEthDma::init()
         if (params.options->address_aligned_beats)
             params.base_addr->DMASBMR |= ETH_DMASBMR_AAL;
 
+<<<<<<< HEAD
         // Fixed Burst Length- When this bit is set to 1, the AHB master
-        // will initiate burst transfers of specified length (INCRx or SINGLE).
-        if (params.options->fixed_burst_length)
-            params.base_addr->DMASBMR |= ETH_DMASBMR_FB;
+        == == ==
+            =
+                // Fixed Burst Length- When this bit is set to 1, the AHB master 
+>>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
+            // will initiate burst transfers of specified length (INCRx or SINGLE).
+            if (params.options->fixed_burst_length) params.base_addr->DMASBMR |=
+            ETH_DMASBMR_FB;
 
         /*
             Mixed Burst- AHB master performs undefined burst transfers
@@ -53,12 +63,21 @@ bool StEthDma::init()
         if (params.options->rebuild_incrx_burst)
             params.base_addr->DMASBMR |= ETH_DMASBMR_RB;
     }
+<<<<<<< HEAD
 
     // Set TX & RX Descriptor Ring Lengths
     uint32_t tx_ring_len =
         static_cast<uint32_t>((params.tx_length - 1) & 0x03ff);
     uint32_t rx_ring_len =
         static_cast<uint32_t>((params.rx_length - 1) & 0x03ff);
+    == == == =
+
+                 // Set TX & RX Descriptor Ring Lengths
+        uint32_t tx_ring_len =
+            static_cast<uint32_t>((params.tx_length - 1) & 0x03ff);
+    uint32_t rx_ring_len =
+        static_cast<uint32_t>((params.rx_length - 1) & 0x03ff);
+>>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
 
     SetReg(&(params.base_addr->DMACTDRLR), tx_ring_len, 0, 10);
     SetReg(&(params.base_addr->DMACRDRLR), rx_ring_len, 0, 10);
@@ -77,6 +96,7 @@ bool StEthDma::init()
         if (params.options->pblx8_mode)
             params.base_addr->DMACCR |= ETH_DMACCR_8PBL;
 
+<<<<<<< HEAD
         SetReg(&(params.base_addr->DMACCR),
                static_cast<uint32_t>(params.options->descriptor_skip_length),
                ETH_DMACCR_DSL_Pos, 3);
@@ -84,6 +104,16 @@ bool StEthDma::init()
         SetReg(&(params.base_addr->DMACCR),
                static_cast<uint32_t>(params.options->maximum_segment_size),
                ETH_DMACCR_MSS_Pos, 14);
+        == == == = SetReg(&(params.base_addr->DMACCR),
+                          static_cast<uint32_t>(
+                              params.options->descriptor_skip_length),
+                          ETH_DMACCR_DSL_Pos, 3);
+
+        SetReg(&(params.base_addr->DMACCR),
+               static_cast<uint32_t>(params.options->maximum_segment_size),
+               ETH_DMACCR_MSS_Pos, 14);
+
+>>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
 
         // ETH_DMACTXCR- Channel Transmit Control Register
         if (params.options->tcp_seg_en)
@@ -92,6 +122,7 @@ bool StEthDma::init()
         if (params.options->osp)
             params.base_addr->DMACTCR |= ETH_DMACTCR_OSP;
 
+<<<<<<< HEAD
         SetReg(&(params.base_addr->DMACTCR),
                static_cast<uint32_t>(params.options->tx_burst_length),
                ETH_DMACTCR_TPBL_Pos, 6);
@@ -107,14 +138,34 @@ bool StEthDma::init()
 
         return result;
     }
+    == == == = SetReg(&(params.base_addr->DMACTCR),
+                      static_cast<uint32_t>(params.options->tx_burst_length),
+                      ETH_DMACTCR_TPBL_Pos, 6);
 
-    // Enable interrupts
-    params.base_addr->DMACIER |= ETH_DMACIER_RIE | ETH_DMACIER_TIE;
+    // ETH_DMACRCR- Channel Receive Control Register
+    SetReg(&(params.base_addr->DMACRCR),
+           static_cast<uint32_t>(params.options->rx_burst_length),
+           ETH_DMACRCR_RPBL_Pos, 6);
 
-    // Start TX and RX DMAs
-    params.base_addr->DMACTCR |= ETH_DMACTCR_ST_Msk;
-    params.base_addr->DMACRCR |= ETH_DMACRCR_SR_Msk;
+    SetReg(&(params.base_addr->DMACRCR),
+           static_cast<uint32_t>(params.options->rx_buff_size),
+           ETH_DMACRCR_RBSZ_Pos, 14);
 
     return result;
+}
+    
+>>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
+
+// Enable interrupts
+params.base_addr->DMACIER |= ETH_DMACIER_RIE | ETH_DMACIER_TIE;
+
+// Start TX and RX DMAs
+params.base_addr->DMACTCR |= ETH_DMACTCR_ST_Msk;
+params.base_addr->DMACRCR |= ETH_DMACRCR_SR_Msk;
+<<<<<<< HEAD
+
+return result;
+== == == =
+>>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
 }
 }  // namespace EoT::StmH7

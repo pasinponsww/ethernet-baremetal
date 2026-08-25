@@ -29,7 +29,9 @@ public:
     * @brief Constructor for the EthDma class
     * @note This constructor is protected to prevent direct instantiation of the EthDma class
     */
-    EthDma()
+<<<<<<< HEAD
+    EthDma() == == == = EthMdio()
+>>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
     {
         static_assert(EthDmaReq<T> && std::derived_from<T, EthDma>);
     }
@@ -40,11 +42,14 @@ public:
     */
     bool init();
 
+<<<<<<< HEAD
     // TODO: Some send function
 
     // TODO: Some receive function
 
-private:
+    == == == =
+>>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
+                 private:
 };
 
 }  // namespace EoT
