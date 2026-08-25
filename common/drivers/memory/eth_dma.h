@@ -16,7 +16,7 @@ namespace EoT
 template <typename T>
 concept EthDmaReq = requires(T t)
 {
-    {t.init()} -> std::same_as<bool>;
+    { t.init() } -> std::same_as<bool>;
 };
 
 // clang-format on
@@ -29,27 +29,21 @@ public:
     * @brief Constructor for the EthDma class
     * @note This constructor is protected to prevent direct instantiation of the EthDma class
     */
-<<<<<<< HEAD
-    EthDma() == == == = EthMdio()
->>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
+    EthDma()
     {
         static_assert(EthDmaReq<T> && std::derived_from<T, EthDma>);
     }
 
-    /** 
+    /**
     * @brief Initialize Ethernet DMA
     * @return status of initialize operation
     */
     bool init();
 
-<<<<<<< HEAD
     // TODO: Some send function
-
     // TODO: Some receive function
 
-    == == == =
->>>>>>> 08f66c3ee3421667e0354b867053b61a57a15e80
-                 private:
+private:
 };
 
 }  // namespace EoT
