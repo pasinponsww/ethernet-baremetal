@@ -114,5 +114,7 @@ bool StEthDma::init()
     // Start TX and RX DMAs
     params.base_addr->DMACTCR |= ETH_DMACTCR_ST_Msk;
     params.base_addr->DMACRCR |= ETH_DMACRCR_SR_Msk;
+
+    return result;
 }
 }  // namespace EoT::StmH7

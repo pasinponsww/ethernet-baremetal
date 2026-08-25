@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdint>
+#include "reg_helpers.h"
 
 namespace EoT::StmH7
 {
@@ -47,6 +48,10 @@ namespace EoT::StmH7
 #define ETH_RDES3_BUF1V         (0x1UL << ETH_RDES3_BUF1V_Pos)      /* Buffer 1 Address Valid */
 // clang-format on
 
+
+
+
+
 /** 
 * Ethernet DMA Descriptor- must be word aligned
 * Descriptors generally consist of 4 registers
@@ -59,6 +64,19 @@ struct alignas(32) DmaDescriptor
     uint32_t des3{0};
 };
 
+/*
+   DMA Tx Normal Desciptor Read Format
+  -----------------------------------------------------------------------------------------------
+  TDES0 |                         Buffer1 or Header Address  [31:0]                              |
+  -----------------------------------------------------------------------------------------------
+  TDES1 |                   Buffer2 Address [31:0] / Next Descriptor Address [31:0]              |
+  -----------------------------------------------------------------------------------------------
+  TDES2 | IOC(31) | TTSE(30) | Buff2 Length[29:16] | VTIR[15:14] | Header or Buff1 Length[13:0]  |
+  -----------------------------------------------------------------------------------------------
+  TDES3 | OWN(31) | CTRL[30:26] | Reserved[25:24] | CTRL[23:20] | Reserved[19:17] | Status[16:0] |
+  -----------------------------------------------------------------------------------------------
+*/
+
 /** 
 * @brief Wrapper around regular descriptor for TX
 * @param descriptor.des0 Header or Buffer 1 Addr 
@@ -68,17 +86,33 @@ struct alignas(32) DmaDescriptor
 */
 class TxDmaDescriptor
 {
+    public:
     DmaDescriptor descriptor;
+    bool set_buffer_1(uint32_t addr, uint16_t length)
+    {
+        descriptor.des0 = addr;
+        uint32_t byte_length = (static_cast<uint32_t>(length) & 0x00003FFF);
+        SetReg(&descriptor.des2, byte_length, 13,  14);
+    }
+    bool set_buffer_2(uint32_t addr, uint16_t length)
+    {
+        descriptor.des1 = addr;
+        uint32_t byte_length = (static_cast<uint32_t>(length) & 0x00003FFF);
+        SetReg(&descriptor.des2, byte_length, 16,  14);
+    }
 
-    void set_owned_by_dma();
-
-    bool is_owned_by_cpu();
-
-    bool set_buffer();
+    void set_owned_by_dma()
+    {
+        descriptor.des3 |= ETH_TDES3_OWN;
+    }
+    bool is_owned_by_cpu()
+    {
+        return descriptor.des3 & ETH_TDES3_OWN;
+    }
 };
 
 /**
- * @brief Class to create and manage TX descriptors
+ * @brief Class to create and manage TX descriptors, buffers with data should be created separately
  * @param tx_ring std::array of Tx descriptors
  * @param head_index Current index for descriptor list
  */
@@ -87,26 +121,25 @@ class TxDescriptorManager
 {
     alignas(32) std::array<Size, TxDmaDescriptor> tx_ring
         __attribute__((section(".sram1_data")));
-    uint32_t head_index{0};
 
 public:
-    TxDmaDescriptor& current(){return tx_ring[head_index]};
-    void advance_head()
-    {
-        head_index = (head_index + 1) % Size;
-    }
-
-    bool can_transmit()
-    {
-        return current().is_owned_by_cpu();
-    }
-
-    uint32_t prepare_next(uint8_t* data, uint32_t len)
-    {
-    }
-
+    
     static_assert(N > 0, "Ring must have at least one descriptor");
 };
+
+
+/*
+  DMA Rx Normal Descriptor read format
+  -----------------------------------------------------------------------------------------------------------
+  RDES0 |                                  Buffer1 or Header Address [31:0]                                 |
+  -----------------------------------------------------------------------------------------------------------
+  RDES1 |                                            Reserved                                               |
+  -----------------------------------------------------------------------------------------------------------
+  RDES2 |                                      Payload or Buffer2 Address[31:0]                             |
+  -----------------------------------------------------------------------------------------------------------
+  RDES3 | OWN(31) | IOC(30) | Reserved [29:26] | BUF2V(25) | BUF1V(24) |           Reserved [23:0]          |
+  -----------------------------------------------------------------------------------------------------------
+*/
 
 /** 
 * @brief Wrapper around regular descriptor for RX
@@ -118,6 +151,23 @@ public:
 class RxDmaDescriptor
 {
     DmaDescriptor descriptor;
+    bool set_buffer_1(uint32_t addr)
+    {
+        descriptor.des0 = addr;
+    }
+    bool set_buffer_2(uint32_t addr)
+    {
+        descriptor.des2 = addr;
+    }
+
+    void set_owned_by_dma()
+    {
+        descriptor.des3 |= ETH_RDES3_OWN;
+    }
+    bool is_owned_by_cpu()
+    {
+        return descriptor.des3 & ETH_RDES3_OWN;
+    }
 };
 
 }  // namespace EoT::StmH7

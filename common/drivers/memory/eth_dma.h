@@ -29,7 +29,7 @@ public:
     * @brief Constructor for the EthDma class
     * @note This constructor is protected to prevent direct instantiation of the EthDma class
     */
-    EthMdio()
+    EthDma()
     {
         static_assert(EthDmaReq<T> && std::derived_from<T, EthDma>);
     }
@@ -39,6 +39,10 @@ public:
     * @return status of initialize operation
     */
     bool init();
+
+    // TODO: Some send function
+
+    // TODO: Some receive function
 
 private:
 };
