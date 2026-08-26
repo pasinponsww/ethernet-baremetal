@@ -1,11 +1,11 @@
 /**
  * @file ethernet.h
  * @brief Generic Ethernet driver CRTP interface
- * @note This layer couples the PHY, MAC, and DMA descriptor drivers together
- *       behind a single frame-level interface (init/start/stop, transmit/receive,
- *       link status). The concrete platform implementation (e.g. StEthernet) owns
- *       its Mac<T>, Lan8742<T>, and DMA descriptor ring as members and wires them
- *       together internally.
+ * @note This is the platform-agnostic contract (init/start/stop,
+ *       transmit/receive, link status) that couples the PHY, MAC, DMA, and
+ *       MTL layers together behind one frame-level interface. The concrete
+ *       implementation is per-platform, same as Mac<T>/Mtl<T> -- see
+ *       st_eth.h for the STM32H7 one.
  */
 
 #pragma once
@@ -13,8 +13,7 @@
 #include <cstddef>
 #include <span>
 #include "eth_mac.h"
-// #include "eth_dma.h"
-
+#include "lan8742.h"
 
 namespace EoT
 {

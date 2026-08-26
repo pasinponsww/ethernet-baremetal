@@ -21,7 +21,12 @@ void SetReg(volatile uint32_t* reg, uint32_t enum_val, uint32_t bit_num,
 * @param bit_length Length of bit-field
 */
 template <typename T>
-void SetReg(T& reg, uint32_t value, uint32_t bit_num, uint32_t bit_length);
+void SetReg(T& reg, uint32_t value, uint32_t bit_num, uint32_t bit_length)
+{
+    const T mask = static_cast<T>((static_cast<T>(1U) << bit_length) - 1U);
+    reg &= static_cast<T>(~(mask << bit_num));
+    reg |= static_cast<T>((static_cast<T>(value) & mask) << bit_num);
+}
 
 /**
  * @brief Combines two bytes into a 16-bit value
