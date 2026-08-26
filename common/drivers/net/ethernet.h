@@ -14,6 +14,8 @@
 #include <span>
 #include "eth_mac.h"
 #include "lan8742.h"
+// #include "eth_mtl.h"
+// #include "eth_dma.h"
 
 namespace EoT
 {

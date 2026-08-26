@@ -91,10 +91,10 @@ public:
     bool current_link_settings(PhySettings& out) const;
 
 private:
-    StEthMac& mac_;
-    Lan8742<StEthMdio>& phy_;
-    EthDma& dma_;
-    EthMtl& mtl_;
+    StEthMac& mac;
+    Lan8742<StEthMdio>& phy;
+    EthDma& dma;
+    EthMtl& mtl;
 };
 
 }  // namespace EoT::StmH7
