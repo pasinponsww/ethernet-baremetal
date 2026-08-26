@@ -155,7 +155,7 @@ bool board_init()
 
 template <>
 HwBoard& get_board<StmH7::StEthernet, StmH7::StGpio, StmH7::StRcc,
-                    StmH7::StSysclk, StmH7::StUsart>()
+                   StmH7::StSysclk, StmH7::StUsart>()
 {
     return board;
 }

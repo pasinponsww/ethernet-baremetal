@@ -4,7 +4,7 @@ namespace EoT::StmH7
 {
 
 StEthernet::StEthernet(StEthMac& mac, Lan8742<StEthMdio>& phy, EthDma& dma,
-                        EthMtl& mtl)
+                       EthMtl& mtl)
     : mac_(mac), phy_(phy), dma_(dma), mtl_(mtl)
 {
 }
@@ -69,8 +69,7 @@ EthernetStatus StEthernet::transmit(std::span<const uint8_t> frame)
         return EthernetStatus::LinkDown;
     }
 
-    return dma_.transmit(frame) ? EthernetStatus::Ok
-                                 : EthernetStatus::NoBuffer;
+    return dma_.transmit(frame) ? EthernetStatus::Ok : EthernetStatus::NoBuffer;
 }
 
 EthernetStatus StEthernet::receive(std::span<uint8_t> buffer, size_t& len)
@@ -82,7 +81,7 @@ EthernetStatus StEthernet::receive(std::span<uint8_t> buffer, size_t& len)
     }
 
     return dma_.receive(buffer, len) ? EthernetStatus::Ok
-                                      : EthernetStatus::NoBuffer;
+                                     : EthernetStatus::NoBuffer;
 }
 
 bool StEthernet::is_link_up() const
