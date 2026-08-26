@@ -11,4 +11,5 @@ target_link_libraries(eth_bsp PUBLIC
     driver
     core
     phy
+    ethernet
 )

@@ -154,16 +154,14 @@ bool board_init()
 }
 
 template <>
-HwBoard& get_board<StmH7::StEthernet, StmH7::StGpio, StmH7::StRcc,
-                   StmH7::StSysclk, StmH7::StUsart>()
+HwBoard& get_board<StmH7::HwTraits>()
 {
     return board;
 }
 
 HwBoard& get_hw()
 {
-    return get_board<StmH7::StEthernet, StmH7::StGpio, StmH7::StRcc,
-                     StmH7::StSysclk, StmH7::StUsart>();
+    return get_board<StmH7::HwTraits>();
 }
 
 }  // namespace EoT

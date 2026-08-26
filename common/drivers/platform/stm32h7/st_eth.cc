@@ -5,7 +5,7 @@ namespace EoT::StmH7
 
 StEthernet::StEthernet(StEthMac& mac, Lan8742<StEthMdio>& phy, EthDma& dma,
                        EthMtl& mtl)
-    : mac_(mac), phy_(phy), dma_(dma), mtl_(mtl)
+    : mac(mac), phy(phy), dma(dma), mtl(mtl)
 {
 }
 
@@ -13,17 +13,17 @@ bool StEthernet::init()
 {
     // MTL FIFOs and MAC framing/filtering must be configured before the DMA
     // rings start moving frames through them.
-    if (!mtl_.init())
+    if (!mtl.init())
     {
         return false;
     }
 
-    if (!mac_.init())
+    if (!mac.init())
     {
         return false;
     }
 
-    if (!dma_.init())
+    if (!dma.init())
     {
         return false;
     }
@@ -31,67 +31,79 @@ bool StEthernet::init()
     // The PHY chip is expected to be present on the board regardless of
     // whether a cable is plugged in, so init() (reset + ID check + kick
     // auto-neg) succeeding here doesn't depend on link state.
-    return phy_.init();
+    return phy.init();
 }
 
 bool StEthernet::set_mac_address(const MacAddress& address)
 {
-    return mac_.set_mac_address(address);
+    // If the tranmitter or receiver is enabled it cannot operate on the MAC addr reg
+    if (!mac.is_transmitter_enabled() || !mac.is_receiver_enabled())
+    {
+        return false;
+    }
+
+    return mac.set_mac_address(address);
 }
 
 bool StEthernet::start()
 {
+    // If this process wasn't successful, the MAC will still be left in a disabled state
+    if (!phy.start_auto_negotiation())
+    {
+        return false;
+    }
+
     // Best-effort: apply whatever the PHY currently reports. If the link is
     // down this still leaves the MAC on its last-configured speed/duplex --
     // matches real bring-up, where TX/RX get armed before a cable is
     // necessarily plugged in.
     PhySettings link{};
-    if (phy_.current_link_state(link) == PhyStatus::Ok)
+    if (phy.current_link_state(link) == PhyStatus::Ok)
     {
-        mac_.apply_link_settings(link.speed, link.duplex);
+        mac.apply_link_settings(link.speed, link.duplex);
     }
 
-    return mac_.enable(true);
+    return mac.enable(true);
 }
 
 bool StEthernet::stop()
 {
-    return mac_.enable(false);
+    return mac.enable(false);
 }
 
 EthernetStatus StEthernet::transmit(std::span<const uint8_t> frame)
 {
-    // Gated on the MAC's own TX-enable (i.e. whether start() has been
-    // called), not on PHY link state -- is_link_up() is the separate,
-    // explicit signal for "is a partner actually there".
-    if (!mac_.is_transmitter_enabled())
+
+    // If the transmitter isn't enabled the mac won't accept frames and transmit the frame,
+    // so we can return early with a more specific error code.
+    if (!mac.is_transmitter_enabled())
     {
         return EthernetStatus::LinkDown;
     }
 
-    return dma_.transmit(frame) ? EthernetStatus::Ok : EthernetStatus::NoBuffer;
+    return dma.transmit(frame) ? EthernetStatus::Ok : EthernetStatus::NoBuffer;
 }
 
 EthernetStatus StEthernet::receive(std::span<uint8_t> buffer, size_t& len)
 {
-    if (!mac_.is_receiver_enabled())
+    if (!mac.is_receiver_enabled())
     {
         len = 0U;
         return EthernetStatus::LinkDown;
     }
 
-    return dma_.receive(buffer, len) ? EthernetStatus::Ok
-                                     : EthernetStatus::NoBuffer;
+    return dma.receive(buffer, len) ? EthernetStatus::Ok
+                                    : EthernetStatus::NoBuffer;
 }
 
 bool StEthernet::is_link_up() const
 {
-    return phy_.is_link_up();
+    return phy.is_link_up();
 }
 
 bool StEthernet::current_link_settings(PhySettings& out) const
 {
-    return phy_.current_link_state(out) == PhyStatus::Ok;
+    return phy.current_link_state(out) == PhyStatus::Ok;
 }
 
 }  // namespace EoT::StmH7

@@ -1,16 +1,3 @@
-/**
-* @file main.cc
-* @brief STM32H723 Ethernet composition bring-up sketch.
-*
-* Exercises EthernetImpl<StEthMac, StEthMdio, EthDma, EthMtl> (ethernet.h /
-* board.h) -- real MAC + PHY register plumbing, with placeholder DMA/MTL
-* instances since neither driver exists for this MCU yet.
-*
-* @note Not expected to build cleanly until EthDma/EthMtl (board.h) grow
-* real init()/transmit()/receive() bodies -- this is a structural sketch of
-* the composition, not a verified test like mac_test/mtl_test.
-*/
-
 #include <array>
 #include <cstddef>
 #include <cstring>
@@ -62,9 +49,10 @@ int main()
 
     report(hw, "eth.start()", eth.start());
 
-    // Best-effort -- depends on whether a cable + link partner is present.
+    // Best-effort depends on whether a cable + link partner is present.
     bool link = eth.is_link_up();
     hw.usart.send(bytes("\r\neth.is_link_up() = "));
+
     if (link)
     {
         hw.usart.send(bytes("true"));
