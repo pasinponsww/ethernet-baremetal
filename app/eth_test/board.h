@@ -11,8 +11,8 @@
 namespace EoT
 {
 
-template <typename TEthernet, typename TGpio, typename TRcc,
-          typename TSysclk, typename TUsart>
+template <typename TEthernet, typename TGpio, typename TRcc, typename TSysclk,
+          typename TUsart>
 struct Board
 {
     TEthernet& eth;
@@ -25,8 +25,8 @@ struct Board
 
 bool board_init();
 
-template <typename TEthernet, typename TGpio, typename TRcc,
-          typename TSysclk, typename TUsart>
+template <typename TEthernet, typename TGpio, typename TRcc, typename TSysclk,
+          typename TUsart>
 Board<TEthernet, TGpio, TRcc, TSysclk, TUsart>& get_board();
 
 using HwBoard = Board<StmH7::StEthernet, StmH7::StGpio, StmH7::StRcc,

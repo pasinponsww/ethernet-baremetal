@@ -57,7 +57,6 @@ template <typename T>
 class Ethernet
 {
 public:
-
     /**
     * @brief constructor which uses a static_assert as normal concept syntax doesn't work
     */
