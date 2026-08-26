@@ -20,6 +20,8 @@ bool StEthMtl::init()
     // already allocated to queue 0 -- there's no other queue to share it
     // with.
 
+    // Basically in the init process of the MTL comprise of the tx_queue and
+    // rx_queue configuration, and the flow control thresholds.
     if (!configure_tx_queue(settings.tx_queue))
     {
         return false;
@@ -30,6 +32,7 @@ bool StEthMtl::init()
         return false;
     }
 
+    // Later on it sets the flow control thresholds, which is a separate configuration step.
     return set_flow_control_thresholds(settings.flow_control);
 }
 
@@ -40,9 +43,11 @@ bool StEthMtl::configure_tx_queue(const TxQueueConfig& config)
         return false;
     }
 
-    // Transmit Store and Forward (TSF) is in MTLTQOMR. When set, TTC is
-    // irrelevant -- the whole frame is buffered before release regardless
-    // of the threshold value, so it's only programmed in cut-through mode.
+    // Transmit Store and Forward (TSF) is in MTLTQOMR. If TSF is disabled,
+    // the Transmit Threshold Control (TTC) field in MTLTQOMR decides how
+    // many bytes must be in the Tx FIFO before the MTL will start sending a frame.
+    //  If TSF is enabled, TTC is ignored and the MTL will always wait for the entire
+    // frame to be in the FIFO before sending.
     SetReg(&base_addr->MTLTQOMR, config.store_and_forward ? 1U : 0U,
            ETH_MTLTQOMR_TSF_Pos, 1U);
 
@@ -134,6 +139,7 @@ bool StEthMtl::is_tx_queue_flush_pending() const
         return false;
     }
 
+    // This function just check the status of the FTQ bit in MTLTQOMR. If it's set, the flush is still in progress.
     return (base_addr->MTLTQOMR & ETH_MTLTQOMR_FTQ) != 0U;
 }
 
@@ -144,6 +150,9 @@ uint32_t StEthMtl::get_tx_packet_count() const
         return 0U;
     }
 
+    // This function reads the tx packet count from the MTLTQDR register.
+    // The count indicate the number of packets transmitted by the MTL for the configured Tx queue.
+    // It's like it's own ring buffer for counting packets, and the hardware increments it automatically.
     return (base_addr->MTLTQDR & ETH_MTLTQDR_PTXQ) >> ETH_MTLTQDR_PTXQ_Pos;
 }
 
@@ -154,6 +163,8 @@ uint32_t StEthMtl::get_rx_packet_count() const
         return 0U;
     }
 
+    // This one is similar process to the tx packet count, but for the rx queue.
+    // That reads the number of the packet of the rx queue that have been received by the MTL and handed off to the DMA.
     return (base_addr->MTLRQDR & ETH_MTLRQDR_PRXQ) >> ETH_MTLRQDR_PRXQ_Pos;
 }
 
