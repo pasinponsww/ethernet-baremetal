@@ -38,12 +38,24 @@ public:
     * @brief Initialize Ethernet DMA
     * @return status of initialize operation
     */
-    bool init();
+    bool init()
+    {
+        return self().init();
+    }
 
     // TODO: Some send function
     // TODO: Some receive function
 
 private:
+    T& self()
+    {
+        return static_cast<T&>(*this);
+    }
+
+    const T& self() const
+    {
+        return static_cast<const T&>(*this);
+    }
 };
 
 }  // namespace EoT

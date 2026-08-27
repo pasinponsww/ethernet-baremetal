@@ -74,6 +74,21 @@ struct alignas(32) DmaDescriptor
 */
 
 /** 
+* @brief Config struct for tx descriptor,
+* can be extended in future to support more functionality.
+
+*/
+struct TxDescriptorConfig
+{
+    uint32_t addr1{0};
+    uint32_t length1{0};
+    uint32_t addr2{0};
+    uint32_t length2{0};
+    bool is_start_of_packet{false};
+    bool is_end_of_packet{true};
+};
+
+/** 
 * @brief Wrapper around regular descriptor for TX
 * @param descriptor.des0 Header or Buffer 1 Addr 
 * @param descriptor.des1 Buffer 2 Addr or Buffer 1 Addr Extended
@@ -83,28 +98,51 @@ struct alignas(32) DmaDescriptor
 class TxDmaDescriptor
 {
 public:
-    DmaDescriptor descriptor;
-    bool set_buffer_1(uint32_t addr, uint16_t length)
+    /** 
+    * @brief Configure TX descriptor
+    * @param config configuration struct with buffer info and parameters
+    */
+    bool configure(TxDescriptorConfig& config)
     {
-        descriptor.des0 = addr;
-        uint32_t byte_length = (static_cast<uint32_t>(length) & 0x00003FFF);
-        SetReg(&descriptor.des2, byte_length, 13, 14);
-    }
-    bool set_buffer_2(uint32_t addr, uint16_t length)
-    {
-        descriptor.des1 = addr;
-        uint32_t byte_length = (static_cast<uint32_t>(length) & 0x00003FFF);
-        SetReg(&descriptor.des2, byte_length, 16, 14);
+        // Config buffers
+        descriptor.des0 = config.addr1;
+        uint32_t byte_length =
+            (static_cast<uint32_t>(config.length1) & 0x00003FFF);
+        SetReg(&descriptor.des2, byte_length, ETH_TDES2_B1L_Pos, 14);
+        uint32_t byte_length =
+            (static_cast<uint32_t>(config.length2) & 0x00003FFF);
+        SetReg(&descriptor.des2, byte_length, ETH_TDES2_B2L_Pos, 14);
+
+        // Start/end of ethernet frame
+        if (config.is_start_of_packet)
+            descriptor.des3 |= ETH_TDES3_FD;
+
+        if (config.is_end_of_packet)
+        {
+            descriptor.des3 |= ETH_TDES3_LD;
+
+            // Enable interrupt on packet completion
+            descriptor.des2 |= ETH_TDES2_IOC;
+        }
     }
 
     void set_owned_by_dma()
     {
         descriptor.des3 |= ETH_TDES3_OWN;
     }
+
     bool is_owned_by_cpu()
     {
         return descriptor.des3 & ETH_TDES3_OWN;
     }
+
+    bool is_end_of_packet()
+    {
+        return descriptor.des3 & ETH_TDES3_LD;
+    }
+
+private:
+    DmaDescriptor descriptor;
 };
 
 /**
@@ -112,14 +150,70 @@ public:
  * @param tx_ring std::array of Tx descriptors
  * @param head_index Current index for descriptor list
  */
-template <size_t Size>
+
+template <uint16_t Size>
 class TxDescriptorManager
 {
     alignas(32) std::array<Size, TxDmaDescriptor> tx_ring
         __attribute__((section(".sram1_data")));
+    uint16_t head{0};
+    uint16_t tail{0};
+    bool full{false};
 
 public:
-    static_assert(N > 0, "Ring must have at least one descriptor");
+    static_assert(Size > 0, "Ring must have at least one descriptor");
+
+    /**
+     * @brief inserts a tx descriptor into ring
+     * @param addr address of buffer 1
+     * @param length length of buffer 1
+     * @param start_packet indicates if the descriptor starts ethernet packet
+     * @param end_packet indicates if descriptor has end of ethernet packet
+     * @param addr2 optional argument for second buffer address
+     * @param addr2 optional argument for second buffer length
+     * @returns status of operation
+     */
+    bool insert_desc(TxDescriptorConfig& config)
+    {
+        if (full)
+            return false;
+
+        // Configure buffers
+        tx_ring[head].configure(config);
+
+        // Configure start/end of packet
+        if (start_packet)
+            tx_ring[head].set_start_of_packet();
+        if (end_packet)
+            tx_ring[head].set_end_of_packet();
+
+        head = (head + 1) % Size;
+
+        if (head == tail)
+            full = true;
+
+        return true;
+    }
+
+    /**
+     * @brief Starts transmission for ethernet packet.
+     * Will transmit descriptors until finding one that 
+     * marks end of a packet or until ring is empty
+     * @returns new address for tail pointer, or nullptr if descriptor ring is empty
+     */
+    TxDescriptor* send_packet()
+    {
+        // If descriptr ring is empty
+        bool empty = (!full && head == tail) if (empty) return nullptr;
+
+        while ((tx_ring[tail].is_end_of_packet() == false) && !empty)
+        {
+            tx_ring[tail].set_owned_by_dma();
+            tail = (tail + 1) % Size;
+        }
+
+        return &tx_ring[tail];
+    }
 };
 
 /*
@@ -144,7 +238,9 @@ public:
 */
 class RxDmaDescriptor
 {
+public:
     DmaDescriptor descriptor;
+
     bool set_buffer_1(uint32_t addr)
     {
         descriptor.des0 = addr;
@@ -164,4 +260,61 @@ class RxDmaDescriptor
     }
 };
 
+template <size_t Size>
+class RxDescriptorManager
+{
+    alignas(32) std::array<Size, RxDmaDescriptor> _ring
+        __attribute__((section(".sram1_data")));
+    uint16_t head{0};
+    uint16_t tail{0};
+
+public:
+    static_assert(N > 0, "Ring must have at least one descriptor");
+
+    /**
+     * @brief inserts a rx descriptor into rx ring
+     * @param addr address of buffer 1
+     * @param length length of buffer 1
+     * @param addr2 optional argument for second buffer address
+     * @param addr2 optional argument for second buffer length
+     * @returns status of operation
+     */
+    bool insert_desc(uint32_t addr, uint32_t addr2 = 0)
+    {
+
+        if (head > Size - 1)
+        {
+            // If rx ring is full
+            if (tail == 0)
+                return false;
+            else
+                head = 0;  // Insert at beginning of ring
+        }
+
+        // Configure buffers
+        rx_ring[head].set_buffer_1(addr);
+        if (addr2 > 0 && length2 > 0)
+            tx_ring[head].set_buffer(addr2, length2);
+
+        // Configure start/end of packet
+        if (start_packet)
+            tx_ring[head].set_start_of_packet();
+        if (end_packet)
+            tx_ring[head].set_end_of_packet();
+
+        head += ;
+        return true;
+    }
+
+    /**
+     * @brief starts reception for ethernet packet data
+     * @param num of descriptors used to store data
+     * @returns new address for rx tail pointer
+     */
+    RxDescriptor* receive(int num_descriptors)
+    {
+
+        return tx_ring[tail];
+    }
+};
 }  // namespace EoT::StmH7
