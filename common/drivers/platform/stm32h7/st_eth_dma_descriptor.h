@@ -1,6 +1,6 @@
+#include <array>
 #include <cstddef>
 #include <cstdint>
-#include <array>
 #include "reg_helpers.h"
 
 namespace EoT::StmH7
@@ -159,6 +159,7 @@ private:
 template <uint16_t Size>
 class TxDescriptorManager
 {
+    // Make sure descriptor array stored in SRAM and word aligned
     alignas(32) static std::array<TxDmaDescriptor, Size> tx_ring
         __attribute__((section(".sram1_data")));
     uint16_t head{0};
@@ -166,16 +167,11 @@ class TxDescriptorManager
     bool full{false};
 
 public:
-    static_assert(Size > 0, "Ring must have at least one descriptor");
+    static_assert(Size > 0, "Tx ring must have at least one descriptor");
 
     /**
      * @brief inserts a tx descriptor into ring
-     * @param addr address of buffer 1
-     * @param length length of buffer 1
-     * @param start_packet indicates if the descriptor starts ethernet packet
-     * @param end_packet indicates if descriptor has end of ethernet packet
-     * @param addr2 optional argument for second buffer address
-     * @param addr2 optional argument for second buffer length
+     * @param config descriptor configuration parameters
      * @returns status of operation
      */
     bool insert_desc(TxDescriptorConfig& config)
@@ -257,7 +253,8 @@ public:
 template <size_t Size>
 class RxDescriptorManager
 {
-    alignas(32) static std::array<RxDmaDescriptor, Size> rx_ring  __attribute__((section(".sram1_data")));
+    alignas(32) static std::array<RxDmaDescriptor, Size> rx_ring
+        __attribute__((section(".sram1_data")));
     uint16_t head{0};
     uint16_t tail{0};
 
