@@ -12,6 +12,7 @@ target_include_directories(driver INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/clock
     ${CMAKE_CURRENT_SOURCE_DIR}/checksum
     ${CMAKE_CURRENT_SOURCE_DIR}/net
+    ${CMAKE_CURRENT_SOURCE_DIR}/memory
 )
 
 target_link_libraries(driver INTERFACE

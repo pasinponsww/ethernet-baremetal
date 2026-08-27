@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdint>
+#include <array>
 #include "reg_helpers.h"
 
 namespace EoT::StmH7
@@ -112,8 +113,7 @@ public:
         SetReg(&descriptor.des2, byte_length, ETH_TDES2_B1L_Pos, 14);
 
         descriptor.des1 = config.buff2_addr;
-        uint32_t byte_length =
-            (static_cast<uint32_t>(config.buff2_len) & 0x00003FFF);
+        byte_length = (static_cast<uint32_t>(config.buff2_len) & 0x00003FFF);
         SetReg(&descriptor.des2, byte_length, ETH_TDES2_B2L_Pos, 14);
 
         // Start/end of ethernet frame
@@ -127,6 +127,8 @@ public:
             // Enable interrupt on packet completion
             descriptor.des2 |= ETH_TDES2_IOC;
         }
+
+        return true;
     }
 
     void set_owned_by_dma()
@@ -157,7 +159,7 @@ private:
 template <uint16_t Size>
 class TxDescriptorManager
 {
-    alignas(32) std::array<Size, TxDmaDescriptor> tx_ring
+    alignas(32) static std::array<TxDmaDescriptor, Size> tx_ring
         __attribute__((section(".sram1_data")));
     uint16_t head{0};
     uint16_t tail{0};
@@ -197,7 +199,7 @@ public:
      * marks end of a packet or until ring is empty
      * @returns new address for tail pointer, or nullptr if descriptor ring is empty
      */
-    TxDescriptor* send_packet()
+    TxDmaDescriptor* send_packet()
     {
         // If descriptor ring is empty
         bool empty = (!full && head == tail);
@@ -242,15 +244,6 @@ class RxDmaDescriptor
 public:
     DmaDescriptor descriptor;
 
-    bool set_buffer_1(uint32_t addr)
-    {
-        descriptor.des0 = addr;
-    }
-    bool set_buffer_2(uint32_t addr)
-    {
-        descriptor.des2 = addr;
-    }
-
     void set_owned_by_dma()
     {
         descriptor.des3 |= ETH_RDES3_OWN;
@@ -264,46 +257,19 @@ public:
 template <size_t Size>
 class RxDescriptorManager
 {
-    alignas(32) std::array<Size, RxDmaDescriptor> _ring
-        __attribute__((section(".sram1_data")));
+    alignas(32) static std::array<RxDmaDescriptor, Size> rx_ring  __attribute__((section(".sram1_data")));
     uint16_t head{0};
     uint16_t tail{0};
 
 public:
-    static_assert(N > 0, "Ring must have at least one descriptor");
+    static_assert(Size > 0, "Ring must have at least one descriptor");
 
     /**
      * @brief inserts a rx descriptor into rx ring
-     * @param addr address of buffer 1
-     * @param length length of buffer 1
-     * @param addr2 optional argument for second buffer address
-     * @param addr2 optional argument for second buffer length
      * @returns status of operation
      */
     bool insert_desc(uint32_t addr, uint32_t addr2 = 0)
     {
-
-        if (head > Size - 1)
-        {
-            // If rx ring is full
-            if (tail == 0)
-                return false;
-            else
-                head = 0;  // Insert at beginning of ring
-        }
-
-        // Configure buffers
-        rx_ring[head].set_buffer_1(addr);
-        if (addr2 > 0 && length2 > 0)
-            tx_ring[head].set_buffer(addr2, length2);
-
-        // Configure start/end of packet
-        if (start_packet)
-            tx_ring[head].set_start_of_packet();
-        if (end_packet)
-            tx_ring[head].set_end_of_packet();
-
-        head += ;
         return true;
     }
 
@@ -312,10 +278,9 @@ public:
      * @param num of descriptors used to store data
      * @returns new address for rx tail pointer
      */
-    RxDescriptor* receive(int num_descriptors)
+    RxDmaDescriptor* receive(int num_descriptors)
     {
-
-        return tx_ring[tail];
+        return nullptr;
     }
 };
 }  // namespace EoT::StmH7
