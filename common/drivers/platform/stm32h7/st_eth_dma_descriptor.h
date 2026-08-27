@@ -80,10 +80,10 @@ struct alignas(32) DmaDescriptor
 */
 struct TxDescriptorConfig
 {
-    uint32_t addr1{0};
-    uint32_t length1{0};
-    uint32_t addr2{0};
-    uint32_t length2{0};
+    uint32_t buff1_addr{0};
+    uint32_t buff1_len{0};
+    uint32_t buff2_addr{0};
+    uint32_t buff2_len{0};
     bool is_start_of_packet{false};
     bool is_end_of_packet{true};
 };
@@ -105,12 +105,15 @@ public:
     bool configure(TxDescriptorConfig& config)
     {
         // Config buffers
-        descriptor.des0 = config.addr1;
+        descriptor.des0 = config.buff1_addr;
         uint32_t byte_length =
-            (static_cast<uint32_t>(config.length1) & 0x00003FFF);
+            (static_cast<uint32_t>(config.buff1_len) & 0x00003FFF);
+
         SetReg(&descriptor.des2, byte_length, ETH_TDES2_B1L_Pos, 14);
+
+        descriptor.des1 = config.buff2_addr;
         uint32_t byte_length =
-            (static_cast<uint32_t>(config.length2) & 0x00003FFF);
+            (static_cast<uint32_t>(config.buff2_len) & 0x00003FFF);
         SetReg(&descriptor.des2, byte_length, ETH_TDES2_B2L_Pos, 14);
 
         // Start/end of ethernet frame
@@ -180,13 +183,6 @@ public:
 
         // Configure buffers
         tx_ring[head].configure(config);
-
-        // Configure start/end of packet
-        if (start_packet)
-            tx_ring[head].set_start_of_packet();
-        if (end_packet)
-            tx_ring[head].set_end_of_packet();
-
         head = (head + 1) % Size;
 
         if (head == tail)
@@ -203,8 +199,13 @@ public:
      */
     TxDescriptor* send_packet()
     {
-        // If descriptr ring is empty
-        bool empty = (!full && head == tail) if (empty) return nullptr;
+        // If descriptor ring is empty
+        bool empty = (!full && head == tail);
+
+        if (empty)
+        {
+            return nullptr;
+        }
 
         while ((tx_ring[tail].is_end_of_packet() == false) && !empty)
         {
