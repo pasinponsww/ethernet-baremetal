@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "st_eth_mac.h"
 #include "st_eth_mdio.h"
+#include "st_eth_mtl.h"
 #include "st_gpio.h"
 #include "st_rcc.h"
 #include "st_sysclk.h"
@@ -107,17 +108,32 @@ StEthMacParams mac_params{
 
 StEthMac mac{mac_params};
 
-// See board.h -- no real DMA/MTL drivers exist for this MCU yet.
+// MTL settings: store-and-forward on both FIFOs (safe default), no
+// error/undersized forwarding, hardware flow control off.
+StEthMtlSettings mtl_settings{
+    TxQueueConfig{},
+    RxQueueConfig{},
+    FlowControlThresholds{},
+};
+
+StEthMtlParams mtl_params{
+    mtl_settings,
+    ETH,
+};
+
+StEthMtl eth_mtl{mtl_params};
+
+// No real DMA descriptor-ring driver exists for this MCU yet -- see
+// EthDma in st_eth.h.
 EthDma eth_dma{};
-EthMtl eth_mtl{};
 
 }  // namespace EoT::StmH7
 
 namespace EoT
 {
 
-// The composed Ethernet driver: real MAC/PHY register plumbing, DMA/MTL
-// are placeholders (see board.h).
+// The composed Ethernet driver: real MAC/PHY/MTL register plumbing, DMA is
+// still a placeholder (see st_eth.h).
 StmH7::StEthernet eth{StmH7::mac, StmH7::phy, StmH7::eth_dma, StmH7::eth_mtl};
 
 // The one and only board instance

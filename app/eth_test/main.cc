@@ -40,7 +40,7 @@ int main()
     hw.usart.send(
         bytes("\r\n===== STM32H723 Ethernet composition test =====\r\n"));
     hw.usart.send(
-        bytes("(MAC+PHY registers are real HW; DMA/MTL are placeholders)\r\n"));
+        bytes("(MAC+PHY+MTL registers are real HW; DMA is a placeholder)\r\n"));
 
     report(hw, "eth.init()", eth.init());
 

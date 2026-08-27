@@ -4,7 +4,7 @@ namespace EoT::StmH7
 {
 
 StEthernet::StEthernet(StEthMac& mac, Lan8742<StEthMdio>& phy, EthDma& dma,
-                       EthMtl& mtl)
+                       StEthMtl& mtl)
     : mac(mac), phy(phy), dma(dma), mtl(mtl)
 {
 }

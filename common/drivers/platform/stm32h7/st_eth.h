@@ -5,15 +5,16 @@
  * @date 8/25/2026
  * @note Concrete composition of the MAC, PHY, DMA, and MTL layers for this
  *       MCU, satisfying the generic Ethernet<T> interface (ethernet.h).
- *       No real DMA/MTL descriptor-ring driver exists for this MCU yet --
- *       EthDma/EthMtl below are placeholder stand-ins with the minimal
- *       init()/transmit()/receive() shape StEthernet expects. Swap them
- *       for real drivers once they exist; StEthernet's public interface
- *       doesn't change.
+ *       No real DMA descriptor-ring driver exists for this MCU yet -- EthDma
+ *       below is a placeholder stand-in with the minimal
+ *       init()/transmit()/receive() shape StEthernet expects. Swap it for
+ *       the real driver once it exists; StEthernet's public interface
+ *       doesn't change. MTL is real (st_eth_mtl.h/StEthMtl).
  */
 
 #pragma once
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include "ethernet.h"
 #include "lan8742.h"
@@ -25,11 +26,38 @@
 namespace EoT::StmH7
 {
 
+/**
+* @brief Placeholder stand-in for the not-yet-implemented DMA descriptor-ring
+*        driver. Provides the minimal init()/transmit()/receive() shape
+*        StEthernet expects; swap for the real driver once it exists.
+*/
+class EthDma
+{
+public:
+    bool init()
+    {
+        return true;
+    }
+
+    bool transmit(std::span<const uint8_t> frame)
+    {
+        (void)frame;
+        return false;
+    }
+
+    bool receive(std::span<uint8_t> buffer, size_t& len)
+    {
+        (void)buffer;
+        len = 0U;
+        return false;
+    }
+};
+
 class StEthernet : public Ethernet<StEthernet>
 {
 public:
     StEthernet(StEthMac& mac, Lan8742<StEthMdio>& phy, EthDma& dma,
-               EthMtl& mtl);
+               StEthMtl& mtl);
 
     /**
     * @brief Initialize the MTL, MAC, DMA, and PHY, in that dependency order
@@ -94,7 +122,7 @@ private:
     StEthMac& mac;
     Lan8742<StEthMdio>& phy;
     EthDma& dma;
-    EthMtl& mtl;
+    StEthMtl& mtl;
 };
 
 }  // namespace EoT::StmH7
