@@ -9,6 +9,7 @@ add_library(hal STATIC
     st_eth_mdio.cc
     st_eth_mac.cc
     st_eth_mtl.cc
+    st_eth.cc
 )
 
 target_include_directories(hal PUBLIC
