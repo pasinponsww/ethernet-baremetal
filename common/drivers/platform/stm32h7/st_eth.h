@@ -17,7 +17,7 @@
 #include <span>
 #include "ethernet.h"
 #include "lan8742.h"
-#include "st_eth_dma.h"
+// #include "st_eth_dma.h"
 #include "st_eth_mac.h"
 #include "st_eth_mdio.h"
 #include "st_eth_mtl.h"
