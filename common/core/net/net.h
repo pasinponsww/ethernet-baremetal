@@ -18,6 +18,16 @@
  *       from it), generic over any Ethernet<T>-conforming type, holding it
  *       by reference the same way Board<THw> holds its peripherals.
  *
+ *       Data flow, and where each hop is implemented:
+ *
+ *         Cable -> PHY -> MAC -> DMA -> RAM -> net.h/.cc -> pbuf -> IP -> TCP/UDP -> application
+ *                  |------ EoT::Ethernet<T> ------|  |-- NetIf<TEth> --|  |----- lwIP ----------|
+ *                  (lan8742.h, st_eth_mac.*,          (this file,        (external/lightweight-ip,
+ *                   st_eth_mtl.*, st_eth.* --          low_level_output/   NO_SYS=1, driven by
+ *                   MTL/MAC/DMA registers)              service_rx here    poll()'s
+ *                                                        turn frames into  sys_check_timeouts())
+ *                                                        pbuf, and back)
+ *
  * @author Bex Saw
  */
 
