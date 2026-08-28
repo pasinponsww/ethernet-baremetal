@@ -12,11 +12,43 @@
 namespace EoT
 {
 
+/** 
+* @brief Config struct for tx descriptor,
+* can be extended in future to support more functionality.
+*/
+struct TxDescriptorConfig
+{
+    uint32_t buff1_addr{0};
+    uint32_t buff1_len{0};
+    uint32_t buff2_addr{0};
+    uint32_t buff2_len{0};
+    bool is_start_of_packet{false};
+    bool is_end_of_packet{true};
+};
+
+/** 
+* @brief Config struct for rx descriptor,
+* can be extended in future to support more functionality.
+*/
+struct RxDescriptorConfig
+{
+    uint32_t buff1_addr{0};
+    uint32_t buff2_addr{0};
+};
+
 // clang-format off
 template <typename T>
-concept EthDmaReq = requires(T t)
+concept EthDmaReq = requires(
+    T t, 
+    uint8_t num_descriptors, 
+    TxDescriptorConfig& tx_desc_config,
+    RxDescriptorConfig& rx_desc_config)
 {
     { t.init() } -> std::same_as<bool>;
+    { t.insert_tx_desc(tx_desc_config) } -> std::same_as<bool>;
+    { t.insert_rx_desc(rx_desc_config) } -> std::same_as<bool>;
+    { t.send_packet() } -> std::same_as<bool>;
+    { t.receive(num_descriptors) } -> std::same_as<bool>;
 };
 
 // clang-format on
@@ -43,8 +75,33 @@ public:
         return self().init();
     }
 
-    // TODO: Some send function
-    // TODO: Some receive function
+    /**
+     * @brief Add tx descriptor to tx ring
+     * @return status of operation
+     */
+    bool insert_tx_desc(TxDescriptorConfig& config)
+    {
+        return self();
+    }
+
+    /**
+     * @brief Send ethernet packet (or all data in descriptors if none is marked as being the end of a packet)
+     * @return status of operation
+     */
+    bool send_packet()
+    {
+        return self().send_packet();
+    }
+
+    /**
+     * @brief Receive ethernet data
+     * @param num_descriptors number of descriptors to store data into
+     * @return status of operation
+     */
+    bool receive(uint8_t num_descriptors)
+    {
+        return self().receive(num_descriptors);
+    }
 
 private:
     T& self()

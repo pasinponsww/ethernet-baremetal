@@ -1,6 +1,15 @@
+/**
+ * @file st_eth_dma.h
+ * @brief STM32 Ethernet DMA Descriptor Manager Interface
+ * @author Farhaan Khan
+ * @date
+ */
+
+#pragma once
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include "eth_dma.h"
 #include "reg_helpers.h"
 
 namespace EoT::StmH7
@@ -73,21 +82,6 @@ struct alignas(32) DmaDescriptor
   TDES3 | OWN(31) | CTRL[30:26] | Reserved[25:24] | CTRL[23:20] | Reserved[19:17] | Status[16:0] |
   -----------------------------------------------------------------------------------------------
 */
-
-/** 
-* @brief Config struct for tx descriptor,
-* can be extended in future to support more functionality.
-
-*/
-struct TxDescriptorConfig
-{
-    uint32_t buff1_addr{0};
-    uint32_t buff1_len{0};
-    uint32_t buff2_addr{0};
-    uint32_t buff2_len{0};
-    bool is_start_of_packet{false};
-    bool is_end_of_packet{true};
-};
 
 /** 
 * @brief Wrapper around regular descriptor for TX
@@ -209,9 +203,19 @@ public:
         {
             tx_ring[tail].set_owned_by_dma();
             tail = (tail + 1) % Size;
+            empty = (head == tail);
         }
 
         return &tx_ring[tail];
+    }
+
+    /**
+     * @brief helper func to initialize Ethernet DMA
+     * @returns base addr for tx descriptor ring
+     */
+    TxDmaDescriptor* ring_head()
+    {
+        return &tx_ring[0];
     }
 };
 
@@ -240,6 +244,22 @@ class RxDmaDescriptor
 public:
     DmaDescriptor descriptor;
 
+    bool configure(RxDescriptorConfig& config)
+    {
+        descriptor.des0 = config.buff1_addr;
+        descriptor.des2 = config.buff2_addr;
+
+        descriptor.des3 |= ETH_RDES3_BUF1V;
+
+        if (descriptor.des2 != 0)
+            descriptor.des3 |= ETH_RDES3_BUF2V;
+
+        // Interrupt on every descriptor that receives data
+        descriptor.des3 |= ETH_RDES3_IOC;
+
+        return true;
+    }
+
     void set_owned_by_dma()
     {
         descriptor.des3 |= ETH_RDES3_OWN;
@@ -250,13 +270,14 @@ public:
     }
 };
 
-template <size_t Size>
+template <uint16_t Size>
 class RxDescriptorManager
 {
     alignas(32) static std::array<RxDmaDescriptor, Size> rx_ring
         __attribute__((section(".sram1_data")));
     uint16_t head{0};
     uint16_t tail{0};
+    bool full{false};
 
 public:
     static_assert(Size > 0, "Ring must have at least one descriptor");
@@ -265,19 +286,64 @@ public:
      * @brief inserts a rx descriptor into rx ring
      * @returns status of operation
      */
-    bool insert_desc(uint32_t addr, uint32_t addr2 = 0)
+    bool insert_desc(RxDescriptorConfig& config)
     {
-        return true;
+        bool result{true};
+
+        if (full)
+            return false;
+
+        // Configure buffers
+        result = rx_ring[head].configure(config);
+        head = (head + 1) % Size;
+
+        if (head == tail)
+            full = true;
+
+        return result;
     }
 
     /**
      * @brief starts reception for ethernet packet data
-     * @param num of descriptors used to store data
+     * @param num of descriptors we want to store data into
      * @returns new address for rx tail pointer
      */
-    RxDmaDescriptor* receive(int num_descriptors)
+    RxDmaDescriptor* receive(uint8_t num_descriptors)
     {
-        return nullptr;
+        // If descriptor ring is empty
+        bool empty = (!full && (head == tail));
+
+        if (empty)
+            return nullptr;
+
+        // Set descriptors to be owned by DMA to start reception
+        for (int i = 0; i < num_descriptors && !empty; ++i)
+        {
+            rx_ring[tail].set_owned_by_dma();
+            tail = (tail + 1) % Size;
+            empty = (head == tail);
+        }
+
+        return &rx_ring[tail];
+    }
+
+    /**
+     * @brief helper func to initialize Ethernet DMA
+     * @returns base addr for rx descriptor ring
+     */
+    RxDmaDescriptor* ring_head()
+    {
+        return &(rx_ring[0]);
     }
 };
+
+// Actual buffer definitions
+template <uint16_t Size>
+std::array<TxDmaDescriptor, Size> TxDescriptorManager<Size>::tx_ring
+    __attribute__((section(".sram1_data")));
+
+template <uint16_t Size>
+std::array<RxDmaDescriptor, Size> RxDescriptorManager<Size>::rx_ring
+    __attribute__((section(".sram1_data")));
+
 }  // namespace EoT::StmH7
