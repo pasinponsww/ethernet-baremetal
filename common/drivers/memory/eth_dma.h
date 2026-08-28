@@ -81,7 +81,16 @@ public:
      */
     bool insert_tx_desc(TxDescriptorConfig& config)
     {
-        return self();
+        return self().insert_tx_desc(config);
+    }
+
+     /**
+     * @brief Add rx descriptor to rx ring
+     * @return status of operation
+     */
+    bool insert_rx_desc(RxDescriptorConfig& config)
+    {
+        return self().insert_rx_desc(config);
     }
 
     /**

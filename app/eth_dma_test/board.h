@@ -14,6 +14,7 @@ namespace EoT
 
 constexpr uint16_t kTxRingSize{10};
 constexpr uint16_t kRxRingSize{10};
+constexpr uint16_t kRxBuffSize{64};
 
 template <typename TEthDma, typename TGpio, typename TRcc, typename TSysclk,
           typename TUsart>

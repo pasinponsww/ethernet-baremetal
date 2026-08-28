@@ -76,9 +76,10 @@ StEthDmaSettings eth_dma_settings{
     .rx_head{nullptr},  
     .rx_tail{nullptr},
     .tx_head{nullptr},
+    .tx_tail{nullptr},
     .rx_length{kRxRingSize},
     .tx_length{kTxRingSize},
-    .rx_buff_size{40},  // must be multiple of 4
+    .rx_buff_size{kRxBuffSize},  // must be multiple of 4
     .base_addr{ETH},
     .options{&eth_dma_ctrl_settings}
 };
