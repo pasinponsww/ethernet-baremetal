@@ -16,6 +16,15 @@ void SetReg(T& reg, uint32_t value, uint32_t bit_num, uint32_t bit_length)
     reg |= static_cast<T>((static_cast<T>(value) & mask) << bit_num);
 }
 
+// This is here because the compiler needs to see the template instantiations 
+// somewhere, and this is a convenient place to put them. The compiler will 
+// generate code for these specific types when it sees them used in other 
+// translation units, but we need to explicitly instantiate them here to 
+// ensure that the code is generated.
+template void SetReg<uint8_t>(uint8_t&, uint32_t, uint32_t, uint32_t);
+template void SetReg<uint16_t>(uint16_t&, uint32_t, uint32_t, uint32_t);
+template void SetReg<uint32_t>(uint32_t&, uint32_t, uint32_t, uint32_t);
+
 uint16_t combine_uint16(uint8_t msb, uint8_t lsb)
 {
     return (static_cast<uint16_t>(msb) << 8) | static_cast<uint16_t>(lsb);

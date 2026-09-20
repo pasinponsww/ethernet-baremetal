@@ -1,44 +1,80 @@
+/**
+ * @file net.cc
+ * @brief Non-template part of the net layer
+ * @note NetIf<TEth> is a template, so its bodies live in net_impl.h where
+ *       they are visible at every instantiation point -- none of it is
+ *       compiled here. What is left for this translation unit is the
+ *       handful of ordinary functions that do not depend on TEth: the
+ *       ip4_addr_t helpers declared in net_config.h.
+ *
+ * @author Bex Saw
+ */
+
 #include "net.h"
 
 namespace EoT::Net
 {
-NetIf<TEth>::NetIf(EoT::Ethernet<TEth>& eth) : eth(eth)
+
+ip4_addr_t make_ip4(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
 {
-    nif.state = LinkState::Uninit;
+    ip4_addr_t address{};
+
+    // IP4_ADDR packs the octets and applies the host-to-network swap, so
+    // this stays correct if the port is ever moved to a big-endian core.
+    IP4_ADDR(&address, a, b, c, d);
+
+    return address;
 }
 
-bool NetIf<TEth>::init(const NetConfig& config)
+size_t format_ip4(const ip4_addr_t& address, char* out, size_t capacity)
 {
-}
+    // Worst case "255.255.255.255" is 15 characters plus a terminator.
+    constexpr size_t kMaxTextLength{16U};
 
-void NetIf<TEth>::poll()
-{
-}
+    if (out == nullptr || capacity < kMaxTextLength)
+    {
+        return 0U;
+    }
 
-bool NetIf<TEth>::current_applied_settings(PhySettings& config) const
-{
-}
+    // ip4_addr1..4 read the octets back out in dotted-quad order,
+    // undoing the network byte order make_ip4() put them in.
+    const uint8_t octets[4] = {
+        ip4_addr1(&address),
+        ip4_addr2(&address),
+        ip4_addr3(&address),
+        ip4_addr4(&address),
+    };
 
-// Private methods below here
+    size_t written{0U};
 
-static err_t low_level_init(::netif* n)
-{
-}
+    for (size_t i = 0U; i < 4U; ++i)
+    {
+        if (i != 0U)
+        {
+            out[written++] = '.';
+        }
 
-static err_t low_level_output(::netif* n, pbuf* p)
-{
-}
+        // No stdio in this build, so emit the decimal digits by hand.
+        // Each octet is 1-3 digits; peel the leading zeros off rather
+        // than printing a fixed three.
+        const uint8_t value = octets[i];
 
-void service_rx()
-{
-}
+        if (value >= 100U)
+        {
+            out[written++] = static_cast<char>('0' + (value / 100U));
+        }
 
-void apply_link_up(const PhySettings& s)
-{
-}
+        if (value >= 10U)
+        {
+            out[written++] = static_cast<char>('0' + ((value / 10U) % 10U));
+        }
 
-void apply_link_down()
-{
+        out[written++] = static_cast<char>('0' + (value % 10U));
+    }
+
+    out[written] = '\0';
+
+    return written;
 }
 
 }  // namespace EoT::Net

@@ -10,6 +10,7 @@
 // This file here handles only the configuration struct and enums, not the NetIf class itself
 
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include "ethernet.h"       // EoT::MacAddress
 #include "lwip/ip4_addr.h"  // provided by lwIP
@@ -76,5 +77,37 @@ struct NetConfig
     const char* hostname{"eot-dev"};
     uint32_t link_poll_interval_ms{100};
 };
+
+/*                                                                */
+/*                      Address helpers                           */
+/*                                                                */
+
+/**
+ * @brief Build an ip4_addr_t from four dotted-quad octets
+ * @param a First octet (the 192 in 192.168.1.50)
+ * @param b Second octet
+ * @param c Third octet
+ * @param d Fourth octet
+ * @return The address, in the network byte order lwIP stores internally
+ * @note Exists so StaticIpConfig can be filled in readably from a BSP
+ *       without every caller having to remember that lwIP keeps
+ *       ip4_addr_t big-endian regardless of the core it runs on.
+ */
+ip4_addr_t make_ip4(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
+
+/**
+ * @brief Render an ip4_addr_t as a dotted-quad string
+ * @param address The address to render
+ * @param[out] out Destination buffer
+ * @param capacity Size of `out` in bytes, including the terminator
+ * @return Number of characters written, not counting the terminator; 0 if
+ *         `out` is null or too small (needs 16 bytes for the worst case,
+ *         "255.255.255.255")
+ * @note lwIP ships ip4addr_ntoa(), but it formats into a shared static
+ *       buffer, so two calls in one printf-style expression silently
+ *       clobber each other. This writes where the caller asks. Hand-rolled
+ *       rather than snprintf because this build has no stdio.
+ */
+size_t format_ip4(const ip4_addr_t& address, char* out, size_t capacity);
 
 }  // namespace EoT::Net

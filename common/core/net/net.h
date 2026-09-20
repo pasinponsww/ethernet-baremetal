@@ -119,6 +119,13 @@ private:
      *       netif->linkoutput = &low_level_output. Do NOT do hardware
      *       bring-up here -- that already happened in init() before
      *       netif_add() was called; n->state is `this`, set by init().
+     *
+     *       NETIF_FLAG_LINK_UP is deliberately NOT among the flags set
+     *       here. The link flag is owned by the state machine below
+     *       (apply_link_up/apply_link_down) and must start clear:
+     *       asserting it at construction would tell lwIP the cable is
+     *       good before the PHY has ever been sampled, and DHCP would
+     *       burn its discovery retries into a dead link.
      */
     static err_t low_level_init(::netif* n);
 
@@ -147,6 +154,16 @@ private:
     void service_rx();
 
     /**
+     * @brief One pass of the link-state transition table
+     * @note Factored out of poll() because init() runs exactly the same
+     *       pass once, unforced, so a cable that is already plugged in at
+     *       boot is caught immediately instead of waiting a full
+     *       link_poll_interval_ms. The rate limiting lives in poll(); this
+     *       samples unconditionally whenever it is called.
+     */
+    void sample_link();
+
+    /**
      * @brief Down->Up (or defensive Up->Up resync) action
      * @note eth.start() again -- confirmed safe/idempotent to call
      *       repeatedly (StEthernet::start() re-applies MAC speed/duplex
@@ -170,7 +187,13 @@ private:
     LinkState state{LinkState::Uninit};
     PhySettings applied_settings{};
     uint32_t last_link_poll_ms{0};
-    std::array<uint8_t, 1518> tx_buf{};
+
+    // Frame staging buffers. Members rather than locals on purpose: one
+    // full-MTU frame is ~1.5 KiB, and service_rx() runs on every superloop
+    // tick, so putting either of these on the stack would put 3 KiB of
+    // churn in the hot path for no benefit. Neither is live across a call.
+    std::array<uint8_t, kMaxFrameSize> tx_buf{};
+    std::array<uint8_t, kMaxFrameSize> rx_buf{};
 };
 
 }  // namespace EoT::Net

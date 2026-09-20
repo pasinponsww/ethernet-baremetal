@@ -21,5 +21,4 @@ if("${TARGET_DEVICE}" MATCHES "NATIVE")
   set(CMAKE_C_EXTENSIONS OFF)
 
   add_subdirectory(googletest)
-  add_subdirectory(lightweight-ip)
 endif()
