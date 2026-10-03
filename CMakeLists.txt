@@ -44,3 +44,9 @@ endif()
 
 add_subdirectory(common)
 add_subdirectory(mcu_support)
+
+# Host-only unit tests (GoogleTest). Nothing here is built for an MCU preset.
+if("${TARGET_DEVICE}" STREQUAL "NATIVE")
+    add_subdirectory(external)
+    add_subdirectory(test)
+endif()
