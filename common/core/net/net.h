@@ -43,6 +43,17 @@
 namespace EoT::Net
 {
 
+/**
+ * @brief Upper bound on one Ethernet II frame this port stages in tx_buf/rx_buf
+ * @note 1518 = 6 (dst) + 6 (src) + 2 (type) + 1500 (max payload) + 4 (FCS).
+ *       The FCS is stripped by hardware before DMA ever hands a frame to
+ *       software, so this is a few bytes of headroom over what actually
+ *       lands in either buffer -- not Modbus::Protocol::kMaxFrameSize
+ *       (260 bytes), which is a PDU/ADU limit from a layer above this one
+ *       and must not leak down here.
+ */
+constexpr size_t kMaxFrameSize{1518U};
+
 template <typename TEth>
 class NetIf
 {
@@ -50,6 +61,15 @@ public:
     explicit NetIf(EoT::Ethernet<TEth>& eth) : eth(eth)
     {
     }
+
+    // Both lwIP's netif_list and the low_level_init/low_level_output
+    // callbacks cache this object's own address (netif->state) and the
+    // address of its embedded `nif` member. A move or copy after init()
+    // would leave those callbacks pointing at a stale object.
+    NetIf(const NetIf&) = delete;
+    NetIf& operator=(const NetIf&) = delete;
+    NetIf(NetIf&&) = delete;
+    NetIf& operator=(NetIf&&) = delete;
 
     /**
      * @brief One-shot bring-up of the Ethernet<T> driver and the lwIP netif
@@ -106,8 +126,13 @@ public:
     /**
      * @brief Escape hatch for app code, e.g. to print the DHCP-assigned
      *        address once bound
+     * @note Const on purpose: NetIf is the sole mutator of the link flag
+     *       (apply_link_up/apply_link_down keep `state` in lock-step with
+     *       it). A mutable reference out of here would let app code flip
+     *       the lwIP-side flag directly and silently desync it from
+     *       `state`/is_link_up().
      */
-    ::netif& raw_netif()
+    const ::netif& raw_netif() const
     {
         return nif;
     }

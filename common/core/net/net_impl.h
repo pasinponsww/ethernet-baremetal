@@ -82,6 +82,25 @@ constexpr err_t to_lwip_err(EthernetStatus status)
 
 }  // namespace
 
+/**
+ * @brief One-time lwip_init() guard, shared by every NetIf<TEth> instantiation
+ * @note Deliberately NOT a static local inside NetIf<TEth>::init() itself:
+ *       init() is a template method, so each distinct TEth would get its
+ *       own independent static, and two ports behind two different driver
+ *       types would each believe they were first and call lwip_init()
+ *       twice, resetting lwIP's memory pools and timer list out from under
+ *       whichever port initialized first. Also deliberately NOT inside the
+ *       anonymous namespace above: that gives internal linkage, so each
+ *       translation unit would again get its own copy. An ordinary inline
+ *       function has external, vague linkage -- its local static is merged
+ *       by the linker into one instance shared by every TEth and every TU.
+ */
+inline bool& lwip_started_flag()
+{
+    static bool started{false};
+    return started;
+}
+
 template <typename TEth>
 bool NetIf<TEth>::init(const NetConfig& config)
 {
@@ -97,11 +116,8 @@ bool NetIf<TEth>::init(const NetConfig& config)
     }
 
     // lwip_init() sets up the memory pools and timer list and must run
-    // exactly once per boot, before any other lwIP call. Guarded by a
-    // function-local static rather than a member so that a second NetIf --
-    // a second physical port, say -- shares the one stack instead of
-    // reinitializing it out from under the first.
-    static bool lwip_started{false};
+    // exactly once per boot, before any other lwIP call.
+    bool& lwip_started{lwip_started_flag()};
     if (!lwip_started)
     {
         lwip_init();
@@ -361,9 +377,18 @@ void NetIf<TEth>::apply_link_up(const PhySettings& s)
     if (!eth.start())
     {
         // The MAC would not take the new settings, so the link is not
-        // usable. Stay where we are (Down, or Up on the old settings)
-        // rather than advertising a link lwIP cannot actually drive; the
-        // next poll() tick retries.
+        // usable. If this was the defensive Up->Up resync (state already
+        // Up, PHY renegotiated without a link-down edge), leaving `state`
+        // at Up here would mean lwIP keeps passing traffic over a MAC
+        // still clocked for the old settings -- corrupting every frame
+        // with no fault indication. Force Down instead so both `state`
+        // and lwIP's link flag agree the interface is not usable; the
+        // next poll() tick retries from a clean Down->Up transition.
+        if (state == LinkState::Up)
+        {
+            apply_link_down();
+        }
+
         return;
     }
 

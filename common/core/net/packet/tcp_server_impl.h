@@ -102,6 +102,7 @@ void TcpServer<TProtocol, kMaxConnections>::release(Connection& connection,
             // Detach first so no callback fires against a released slot.
             tcp_arg(connection.pcb, nullptr);
             tcp_recv(connection.pcb, nullptr);
+            tcp_sent(connection.pcb, nullptr);
             tcp_poll(connection.pcb, nullptr, 0U);
             tcp_err(connection.pcb, nullptr);
 
@@ -120,6 +121,7 @@ void TcpServer<TProtocol, kMaxConnections>::release(Connection& connection,
     connection.owner = nullptr;
     connection.pending = 0U;
     connection.idle_polls = 0U;
+    connection.response_length = 0U;
 }
 
 template <typename TProtocol, uint8_t kMaxConnections>
@@ -154,6 +156,7 @@ err_t TcpServer<TProtocol, kMaxConnections>::on_accept(void* arg,
     // From here the connection, not the server, is the callback argument.
     tcp_arg(new_pcb, connection);
     tcp_recv(new_pcb, &TcpServer::on_recv);
+    tcp_sent(new_pcb, &TcpServer::on_sent);
     tcp_err(new_pcb, &TcpServer::on_error);
     tcp_poll(new_pcb, &TcpServer::on_poll, self->config.poll_interval_ticks);
 
@@ -296,34 +299,82 @@ template <typename TProtocol, uint8_t kMaxConnections>
 void TcpServer<TProtocol, kMaxConnections>::handle_frame(Connection& connection,
                                                          uint16_t frame_length)
 {
+    ++stats.requests;
+
+    if (connection.response_length != 0U)
+    {
+        // A previous response is still waiting on send-buffer space (see
+        // send_response()/on_sent()). Building a new one into the same
+        // connection.response now would overwrite it before it was ever
+        // queued, losing it silently. Drop this request instead -- the
+        // client's own timeout/retransmit recovers it, same as any other
+        // send failure.
+        ++stats.send_failures;
+        return;
+    }
+
     const std::span<const uint8_t> frame{connection.buffer.data(),
                                          frame_length};
 
-    const uint16_t response_size{protocol.handle(frame, tx_buffer)};
+    const uint16_t response_size{protocol.handle(frame, connection.response)};
 
-    ++stats.requests;
-
-    if (response_size == 0U || response_size > tx_buffer.size())
+    if (response_size == 0U || response_size > connection.response.size())
     {
         // Protocol chose silence.
         return;
     }
 
-    // TCP_WRITE_FLAG_COPY: tx_buffer is reused by the next frame while
-    // lwIP still holds the data until it is acknowledged.
-    const err_t written{tcp_write(connection.pcb, tx_buffer.data(),
-                                  response_size, TCP_WRITE_FLAG_COPY)};
+    connection.response_length = response_size;
+    send_response(connection);
+}
+
+template <typename TProtocol, uint8_t kMaxConnections>
+void TcpServer<TProtocol, kMaxConnections>::send_response(Connection& connection)
+{
+    if (connection.response_length == 0U)
+    {
+        return;
+    }
+
+    // TCP_WRITE_FLAG_COPY: connection.response is reused by the next frame
+    // once this send actually succeeds, while lwIP still holds the data
+    // until it is acknowledged.
+    const err_t written{tcp_write(connection.pcb, connection.response.data(),
+                                  connection.response_length,
+                                  TCP_WRITE_FLAG_COPY)};
 
     if (written != ERR_OK)
     {
-        // Out of send buffer. Let the client time out and retry rather
-        // than tear down a healthy connection.
+        // Out of send buffer. Leave response_length set so on_sent(), once
+        // lwIP reports buffer space freed up, retries this same response
+        // instead of it being silently dropped.
         ++stats.send_failures;
         return;
     }
 
+    connection.response_length = 0U;
+
     // Push now rather than waiting for the next lwIP timer tick.
     tcp_output(connection.pcb);
+}
+
+template <typename TProtocol, uint8_t kMaxConnections>
+err_t TcpServer<TProtocol, kMaxConnections>::on_sent(void* arg, tcp_pcb* pcb,
+                                                     u16_t len)
+{
+    (void)pcb;
+    (void)len;
+
+    auto* connection{static_cast<Connection*>(arg)};
+
+    if (connection == nullptr || connection->owner == nullptr)
+    {
+        return ERR_OK;
+    }
+
+    connection->owner->send_response(*connection);
+
+    return ERR_OK;
 }
 
 template <typename TProtocol, uint8_t kMaxConnections>

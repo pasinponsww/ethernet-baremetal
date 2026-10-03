@@ -267,9 +267,13 @@ uint16_t Server::write_single_coil(std::span<const uint8_t> request,
     notify_write(FunctionCode::WriteSingleCoil, address, 1U);
 
     // A successful single write echoes the request back byte for byte.
+    // Response buffer too small is a server-side failure to report the
+    // result, not an empty request, so it gets an exception like every
+    // other failure (see data.h's documented contract on process()).
     if (response.size() < kAddressQuantityRequestSize)
     {
-        return 0U;
+        return make_exception(function, ExceptionCode::ServerDeviceFailure,
+                              response);
     }
 
     std::copy_n(request.data(), kAddressQuantityRequestSize, response.data());
@@ -302,7 +306,8 @@ uint16_t Server::write_single_register(std::span<const uint8_t> request,
 
     if (response.size() < kAddressQuantityRequestSize)
     {
-        return 0U;
+        return make_exception(function, ExceptionCode::ServerDeviceFailure,
+                              response);
     }
 
     std::copy_n(request.data(), kAddressQuantityRequestSize, response.data());
@@ -359,7 +364,8 @@ uint16_t Server::write_multiple_coils(std::span<const uint8_t> request,
     // Response is address and quantity only, not the data.
     if (response.size() < kAddressQuantityRequestSize)
     {
-        return 0U;
+        return make_exception(function, ExceptionCode::ServerDeviceFailure,
+                              response);
     }
 
     response[0] = function;
@@ -411,7 +417,8 @@ uint16_t Server::write_multiple_registers(std::span<const uint8_t> request,
 
     if (response.size() < kAddressQuantityRequestSize)
     {
-        return 0U;
+        return make_exception(function, ExceptionCode::ServerDeviceFailure,
+                              response);
     }
 
     response[0] = function;

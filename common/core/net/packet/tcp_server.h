@@ -12,9 +12,11 @@
  *       and the protocol decides where each frame ends.
  *
  *       Resources, all fixed at compile time:
- *         kMaxConnections * (TProtocol::kMaxFrameSize + ~16) bytes of
- *         reassembly state, plus one TProtocol::kMaxFrameSize response
- *         buffer. No heap. lwIP pcbs come from MEMP_NUM_TCP_PCB.
+ *         kMaxConnections * (2 * TProtocol::kMaxFrameSize + ~16) bytes of
+ *         reassembly + response state (one response buffer per connection,
+ *         not shared, so a response stuck retrying on one connection can
+ *         never be overwritten by another's). No heap. lwIP pcbs come
+ *         from MEMP_NUM_TCP_PCB.
  *
  *       Ownership: holds the protocol by reference (must outlive this).
  *       Owns the listening pcb and every accepted pcb from accept until
@@ -87,6 +89,16 @@ public:
     {
     }
 
+    // lwIP's listen pcb and every accepted pcb cache a raw pointer into
+    // this object (tcp_arg(listen_pcb, this) / tcp_arg(new_pcb, &connection)
+    // where `connection` lives in this object's own `connections` array). A
+    // move or copy after start() would leave those pcbs pointing at a
+    // stale address.
+    TcpServer(const TcpServer&) = delete;
+    TcpServer& operator=(const TcpServer&) = delete;
+    TcpServer(TcpServer&&) = delete;
+    TcpServer& operator=(TcpServer&&) = delete;
+
     /**
      * @brief Bind the listener and start accepting
      * @return true if the listener was bound
@@ -117,6 +129,12 @@ private:
      * @param pending Bytes of a partially received frame in `buffer`
      * @param idle_polls Consecutive tcp_poll callbacks with no traffic
      * @param buffer Reassembly buffer, one full frame
+     * @param response Response staging, one per connection (not shared):
+     *        a response that hits ERR_MEM on tcp_write() has to survive
+     *        until on_sent() retries it, which a buffer shared across
+     *        connections could not safely do
+     * @param response_length Bytes of `response` still waiting to be
+     *        queued; 0 means nothing outstanding
      */
     struct Connection
     {
@@ -125,12 +143,15 @@ private:
         uint16_t pending{0U};
         uint8_t idle_polls{0U};
         std::array<uint8_t, TProtocol::kMaxFrameSize> buffer{};
+        std::array<uint8_t, TProtocol::kMaxFrameSize> response{};
+        uint16_t response_length{0U};
     };
 
     // lwIP raw-API callbacks; static because lwIP takes C function
     // pointers. Each recovers its object from the tcp_arg() void*.
     static err_t on_accept(void* arg, tcp_pcb* new_pcb, err_t err);
     static err_t on_recv(void* arg, tcp_pcb* pcb, pbuf* p, err_t err);
+    static err_t on_sent(void* arg, tcp_pcb* pcb, u16_t len);
     static err_t on_poll(void* arg, tcp_pcb* pcb);
     static void on_error(void* arg, err_t err);
 
@@ -150,15 +171,20 @@ private:
      */
     void handle_frame(Connection& connection, uint16_t frame_length);
 
+    /**
+     * @brief tcp_write() connection.response, retrying what ERR_MEM left behind
+     * @note Called both right after handle_frame() builds a response and
+     *       from on_sent() once lwIP reports buffer space freed up. Leaves
+     *       response_length untouched (non-zero) on another ERR_MEM so the
+     *       next on_sent() tries again.
+     */
+    void send_response(Connection& connection);
+
     PacketProtocol<TProtocol>& protocol;
     Config config{};
     tcp_pcb* listen_pcb{nullptr};
     TcpStats stats{};
     std::array<Connection, kMaxConnections> connections{};
-
-    // Response staging shared across connections. Safe because lwIP
-    // callbacks run to completion one at a time on the superloop.
-    std::array<uint8_t, TProtocol::kMaxFrameSize> tx_buffer{};
 };
 
 }  // namespace EoT::Net

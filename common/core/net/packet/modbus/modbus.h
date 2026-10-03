@@ -31,6 +31,7 @@
 
 #pragma once
 #include <cstdint>
+#include "reg_helpers.h"  // combine_uint16, shared with the rest of the tree
 
 namespace EoT::Net::Modbus
 {
@@ -127,12 +128,12 @@ struct Wire
 /**
  * @brief Read a big-endian 16-bit value
  * @param bytes Pointer to the high byte; two bytes must be readable
+ * @note Forwards to combine_uint16() (common/core/utils/reg_helpers.h)
+ *       rather than repeating the same shift-and-mask here.
  */
-constexpr uint16_t read_be16(const uint8_t* bytes)
+inline uint16_t read_be16(const uint8_t* bytes)
 {
-    return static_cast<uint16_t>(
-        (static_cast<uint16_t>(bytes[0]) << Wire::kBitsPerByte) |
-        static_cast<uint16_t>(bytes[1]));
+    return combine_uint16(bytes[0], bytes[1]);
 }
 
 /**

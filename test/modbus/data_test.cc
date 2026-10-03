@@ -335,4 +335,20 @@ TEST_F(DataTest, ResponseTooSmallIsServerDeviceFailure)
               static_cast<uint8_t>(ExceptionCode::ServerDeviceFailure));
 }
 
+// Mirrors ResponseTooSmallIsServerDeviceFailure but for a write: the model
+// is still mutated (a write that already happened cannot be undone just
+// because the reply doesn't fit), but the caller must be told it failed to
+// receive an acknowledgment via ServerDeviceFailure rather than silence,
+// same as the read path.
+TEST_F(DataTest, WriteSingleCoilResponseTooSmallIsServerDeviceFailure)
+{
+    const std::array<uint8_t, 5> request{0x05, 0x00, 0x04, 0xFF, 0x00};
+    std::array<uint8_t, 4> tiny{};  // needs kAddressQuantityRequestSize == 5
+
+    ASSERT_EQ(server.process(request, tiny), 2U);
+    EXPECT_EQ(tiny[1],
+              static_cast<uint8_t>(ExceptionCode::ServerDeviceFailure));
+    EXPECT_EQ(coils[4], 1U);
+}
+
 }  // namespace

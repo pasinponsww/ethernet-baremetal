@@ -61,6 +61,14 @@ public:
     {
     }
 
+    // udp_recv(pcb, &UdpServer::on_recv, this) hands lwIP this object's own
+    // address as the callback arg. A move or copy after start() would leave
+    // the pcb's recv callback pointing at a stale object.
+    UdpServer(const UdpServer&) = delete;
+    UdpServer& operator=(const UdpServer&) = delete;
+    UdpServer(UdpServer&&) = delete;
+    UdpServer& operator=(UdpServer&&) = delete;
+
     /**
      * @brief Bind the UDP port and start receiving
      * @return true if the port was bound

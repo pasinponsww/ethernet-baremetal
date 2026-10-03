@@ -12,6 +12,8 @@
 
 #include "net.h"
 
+#include <cstring>  // std::strlen, to measure what ip4addr_ntoa_r wrote
+
 namespace EoT::Net
 {
 
@@ -36,45 +38,16 @@ size_t format_ip4(const ip4_addr_t& address, char* out, size_t capacity)
         return 0U;
     }
 
-    // ip4_addr1..4 read the octets back out in dotted-quad order,
-    // undoing the network byte order make_ip4() put them in.
-    const uint8_t octets[4] = {
-        ip4_addr1(&address),
-        ip4_addr2(&address),
-        ip4_addr3(&address),
-        ip4_addr4(&address),
-    };
-
-    size_t written{0U};
-
-    for (size_t i = 0U; i < 4U; ++i)
+    // lwIP already ships this exact algorithm (digit division, no stdio)
+    // as the reentrant ip4addr_ntoa_r; the non-reentrant ip4addr_ntoa()
+    // this function was written to avoid -- the one with the shared
+    // static buffer -- is a different function entirely.
+    if (ip4addr_ntoa_r(&address, out, static_cast<int>(capacity)) == nullptr)
     {
-        if (i != 0U)
-        {
-            out[written++] = '.';
-        }
-
-        // No stdio in this build, so emit the decimal digits by hand.
-        // Each octet is 1-3 digits; peel the leading zeros off rather
-        // than printing a fixed three.
-        const uint8_t value = octets[i];
-
-        if (value >= 100U)
-        {
-            out[written++] = static_cast<char>('0' + (value / 100U));
-        }
-
-        if (value >= 10U)
-        {
-            out[written++] = static_cast<char>('0' + ((value / 10U) % 10U));
-        }
-
-        out[written++] = static_cast<char>('0' + (value % 10U));
+        return 0U;
     }
 
-    out[written] = '\0';
-
-    return written;
+    return std::strlen(out);
 }
 
 }  // namespace EoT::Net
